@@ -1,0 +1,2329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WOUNDHEIR</title>
+    <style>
+        /* Courier New is system font — no import needed */
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --green: #00FFFF;
+            --green-dim: #00cccc;
+            --bg: #000000;
+            --accent1: #FF00FF;
+            --accent2: #FFFF00;
+            --ticker-bg: #0000CC;
+            --chrome-bg: var(--green);
+            --chrome-head-bg: #000000;
+            --chrome-head-fg: var(--green);
+            --chrome-hover-fg: var(--green);
+        }
+
+        body {
+            background: #000000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            font-family: 'Courier New', monospace;
+        }
+
+        /* ── TERMINAL BOX ── */
+        .terminal {
+            width: 96vw;
+            max-width: 1200px;
+            min-height: 92vh;
+            background: var(--bg);
+            color: var(--green);
+            font-size: 23px;
+            line-height: 1.35;
+            text-shadow: 0 0 3px var(--green);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* CRT scanlines overlay (content area) */
+        .terminal.scanlines-on .content::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            background-image: repeating-linear-gradient(
+                to bottom,
+                rgba(0, 0, 0, 0.35) 0px,
+                rgba(0, 0, 0, 0.35) 1px,
+                rgba(0, 0, 0, 0.0) 1.5px,
+                rgba(0, 0, 0, 0.0) 3px
+            );
+            mix-blend-mode: multiply;
+            z-index: 2;
+        }
+
+        /* CRT scanlines overlay on URL/footer bar */
+        .terminal.scanlines-on .url-bar::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            background-image: repeating-linear-gradient(
+                to bottom,
+                rgba(0, 0, 0, 0.35) 0px,
+                rgba(0, 0, 0, 0.35) 1px,
+                rgba(0, 0, 0, 0.0) 1.5px,
+                rgba(0, 0, 0, 0.0) 3px
+            );
+            mix-blend-mode: multiply;
+            z-index: 1;
+        }
+
+        /* CRT scanlines on ticker bar */
+        .terminal.scanlines-on .ticker-bar::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            background-image: repeating-linear-gradient(
+                to bottom,
+                rgba(0, 0, 0, 0.35) 0px,
+                rgba(0, 0, 0, 0.35) 1px,
+                rgba(0, 0, 0, 0.0) 1.5px,
+                rgba(0, 0, 0, 0.0) 3px
+            );
+            mix-blend-mode: multiply;
+            z-index: 1;
+        }
+
+        /* CRT flicker effect (subtle but visible) */
+        .terminal.flicker-on {
+            animation: crt-flicker 0.10s infinite;
+        }
+
+        @keyframes crt-flicker {
+            0%   { opacity: 0.95; filter: brightness(0.97); }
+            50%  { opacity: 1.00; filter: brightness(1.03); }
+            100% { opacity: 0.96; filter: brightness(0.985); }
+        }
+
+        /* Glitch effect */
+        /* Glitch — pixel-shift corruption, no hue rotate, just digital breakup */
+        .terminal.glitch-on {
+            animation: glitch 12s infinite;
+        }
+        @keyframes glitch {
+            0%, 96%, 100% { transform: none; clip-path: none; }
+            96.5% { transform: translateX(-3px); clip-path: inset(15% 0 70% 0); }
+            97%   { transform: translateX(4px);  clip-path: inset(55% 0 20% 0); }
+            97.5% { transform: translateX(-2px); clip-path: inset(80% 0 5% 0); }
+            98%   { transform: translateX(2px);  clip-path: none; }
+            98.5% { transform: none; }
+        }
+
+        /* Static noise — heavier grain */
+        .terminal.noise-on::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            z-index: 999;
+            opacity: 0.10;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+            background-size: 150px 150px;
+            animation: noise-shift 0.08s steps(1) infinite;
+        }
+        @keyframes noise-shift {
+            0%   { background-position: 0 0; }
+            20%  { background-position: -40px 20px; }
+            40%  { background-position: 30px -30px; }
+            60%  { background-position: -60px -10px; }
+            80%  { background-position: 20px 50px; }
+            100% { background-position: -10px 30px; }
+        }
+
+        /* Dynamic noise — animated scanline interference, like a dying CRT */
+        .terminal.dynoise-on::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            z-index: 998;
+            background: repeating-linear-gradient(
+                0deg,
+                transparent,
+                transparent 1px,
+                rgba(255,255,255,0.06) 1px,
+                rgba(255,255,255,0.06) 3px
+            );
+            animation: dynoise-drift 0.2s steps(3) infinite;
+        }
+        @keyframes dynoise-drift {
+            0%   { background-position: 0 0;    opacity: 0.8; }
+            33%  { background-position: 0 -6px; opacity: 1;   }
+            66%  { background-position: 0 3px;  opacity: 0.9; }
+            100% { background-position: 0 0;    opacity: 1;   }
+        }
+
+        /* RGB split / chromatic aberration */
+        .terminal.rgb-on .content,
+        .terminal.rgb-on .boot-screen,
+        .terminal.rgb-on .menu-bar,
+        .terminal.rgb-on .ticker-bar,
+        .terminal.rgb-on .url-bar {
+            text-shadow:
+                -2px 0 rgba(255,0,0,0.5),
+                2px 0 rgba(0,255,255,0.5),
+                0 0 3px var(--green);
+        }
+
+        /* Rolling bar — thick VHS sync bar */
+        .terminal.roll-on::before {
+            content: "";
+            position: absolute;
+            left: 0; right: 0;
+            height: 140px;
+            background: linear-gradient(
+                to bottom,
+                transparent 0%,
+                rgba(255,255,255,0.06) 20%,
+                rgba(255,255,255,0.10) 50%,
+                rgba(255,255,255,0.06) 80%,
+                transparent 100%
+            );
+            pointer-events: none;
+            z-index: 997;
+            animation: roll-bar 5s linear infinite;
+        }
+        @keyframes roll-bar {
+            0%   { top: -140px; }
+            100% { top: 100%; }
+        }
+
+        /* Vignette — dark rounded edges like a real CRT glass */
+        .terminal.vignette-on::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            z-index: 995;
+            background: radial-gradient(
+                ellipse at center,
+                transparent 60%,
+                rgba(0,0,0,0.55) 100%
+            );
+        }
+        /* Horizontal raster bars — coloured scanlines like a PETSCII demo */
+        .terminal.raster-on .content::after,
+        .terminal.raster-on .boot-screen::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            z-index: 10;
+            background: repeating-linear-gradient(
+                to bottom,
+                rgba(var(--green-rgb, 0,255,100), 0.03) 0px,
+                rgba(var(--green-rgb, 0,255,100), 0.03) 2px,
+                transparent 2px,
+                transparent 6px
+            );
+            animation: raster-shift 0.5s steps(3) infinite;
+        }
+        @keyframes raster-shift {
+            0%   { background-position: 0 0; }
+            100% { background-position: 0 6px; }
+        }
+
+        /* Horizontal hold — image drifts sideways slowly, like bad H-sync */
+        .terminal.hhold-on .content,
+        .terminal.hhold-on .boot-screen {
+            animation: hhold 12s ease-in-out infinite;
+        }
+        @keyframes hhold {
+            0%, 100% { transform: translateX(0); }
+            15%  { transform: translateX(-3px); }
+            30%  { transform: translateX(2px); }
+            45%  { transform: translateX(-1px); }
+            60%  { transform: translateX(3px); }
+            75%  { transform: translateX(-2px); }
+            90%  { transform: translateX(1px); }
+        }
+
+        /* Afterglow — text leaves a fading trail like slow phosphor decay */
+        .terminal.afterglow-on .content *,
+        .terminal.afterglow-on .boot-screen * {
+            text-shadow:
+                0 0 2px var(--green),
+                0 0 6px var(--green),
+                0 0 14px var(--green),
+                0 0 30px var(--green);
+            transition: text-shadow 0.4s ease-out;
+        }
+
+        /* Pixel bleed — slight horizontal smear on text, old LCD ghosting */
+        .terminal.bleed-on .content,
+        .terminal.bleed-on .boot-screen,
+        .terminal.bleed-on .menu-bar,
+        .terminal.bleed-on .url-bar {
+            filter: blur(0.3px) contrast(1.4);
+            letter-spacing: 0.5px;
+        }
+
+        /* Power off — shrinks to a horizontal line then disappears */
+        .terminal.poweroff-on {
+            animation: poweroff 1.5s ease-in forwards;
+        }
+        @keyframes poweroff {
+            0%   { transform: scaleY(1); filter: brightness(1); }
+            60%  { transform: scaleY(0.015); filter: brightness(2.5); }
+            80%  { transform: scaleY(0.015) scaleX(0.6); filter: brightness(3); }
+            100% { transform: scaleY(0) scaleX(0); filter: brightness(0); opacity: 0; }
+        }
+
+        /* ── MENU BAR ── */
+        .menu-bar {
+            display: flex;
+            align-items: center;
+            background: var(--accent1);
+            color: #000000;
+            text-shadow: none;
+            font-size: 21px;
+            padding: 2px 6px;
+            position: relative;
+            z-index: 100;
+            user-select: none;
+            flex-shrink: 0;
+        }
+
+        .menu-items {
+            display: flex;
+            flex: 1;
+        }
+
+        .menu-item {
+            padding: 0 16px 0 6px;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .menu-item u { text-decoration: underline; }
+
+        .menu-item.active {
+            background: #000000;
+            color: var(--green);
+            text-shadow: 0 0 3px var(--green);
+        }
+
+        /* Clock top right in menu bar */
+        .clock {
+            color: #000000;
+            text-shadow: none;
+            font-size: 20px;
+            letter-spacing: 1px;
+            white-space: nowrap;
+            padding-right: 6px;
+        }
+
+        /* ── DROPDOWN ── */
+        .dropdown {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            background: var(--chrome-bg, var(--accent1));
+            color: #000000;
+            text-shadow: none;
+            min-width: 220px;
+            z-index: 500;
+            border: 2px solid #000000;
+            font-size: 21px;
+            overflow: visible; /* allow Open and Music submenus to show */
+        }
+
+        .menu-item.active .dropdown { display: block; }
+
+        /* Light scanlines on dropdowns so menu text stays readable */
+        .terminal.scanlines-on .menu-item.active .dropdown::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            background-image: repeating-linear-gradient(
+                to bottom,
+                rgba(0, 0, 0, 0.10) 0px,
+                rgba(0, 0, 0, 0.10) 1px,
+                rgba(0, 0, 0, 0.0) 1.5px,
+                rgba(0, 0, 0, 0.0) 3px
+            );
+            mix-blend-mode: multiply;
+        }
+
+        .dd-item {
+            padding: 2px 14px 2px 10px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            white-space: nowrap;
+            color: #000000;
+        }
+
+        .dd-item:hover, .dd-item.hl {
+            background: #000000;
+            color: var(--chrome-hover-fg, var(--green));
+            text-shadow: 0 0 3px var(--chrome-hover-fg, var(--green));
+        }
+
+        .dd-sep {
+            border-top: 1px solid #000000;
+            margin: 2px 0;
+            opacity: 0.4;
+        }
+
+        /* Language submenu */
+        .has-sub { position: relative; }
+
+        .submenu {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: calc(100% - 1px);
+            background: var(--chrome-bg, var(--accent1));
+            color: #000000;
+            text-shadow: none;
+            min-width: 160px;
+            border: 2px solid #000000;
+            z-index: 700;
+            font-size: 21px;
+        }
+
+        .has-sub:hover .submenu,
+        .submenu:hover { display: block; }
+
+        .sub-item {
+            padding: 2px 14px 2px 10px;
+            cursor: pointer;
+            white-space: nowrap;
+            color: #000000;
+        }
+
+        .sub-item:hover, .sub-item.active-lang {
+            background: #000000;
+            color: var(--chrome-hover-fg, var(--green));
+            text-shadow: 0 0 3px var(--chrome-hover-fg, var(--green));
+        }
+
+        .sub-item.has-sub {
+            position: relative;
+            display: flex;
+            justify-content: space-between;
+        }
+        .sub-item.has-sub .submenu { z-index: 701; }
+
+        /* ── CONTENT AREA ── */
+        .content {
+            flex: 1;
+            padding: 10px 16px;
+            position: relative;
+            overflow-y: auto;
+        }
+
+        .content::-webkit-scrollbar { width: 0; }
+
+        .c {
+            display: block;
+            color: var(--green);
+        }
+
+        .inv {
+            background: var(--accent2);
+            color: #000000;
+            text-shadow: none;
+        }
+
+        .lnk {
+            color: var(--green);
+            text-decoration: underline;
+            cursor: pointer;
+        }
+        .lnk:hover {
+            background: var(--green);
+            color: #000000;
+            text-shadow: none;
+        }
+
+        /* ── FLOATING POPUP (Setup etc) ── */
+        .popup {
+            display: none;
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            background: var(--chrome-bg, var(--accent1));
+            color: #000000;
+            text-shadow: none;
+            min-width: 240px;
+            z-index: 300;
+            border: 2px solid #000000;
+            font-size: 21px;
+        }
+
+        .popup.open { display: block; }
+
+        .popup-head {
+            background: var(--chrome-head-bg, #000000);
+            color: var(--chrome-head-fg, var(--green));
+            text-shadow: 0 0 3px var(--chrome-head-fg);
+            padding: 2px 10px;
+            font-size: 21px;
+        }
+
+        .popup-item {
+            padding: 2px 14px 2px 10px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            white-space: nowrap;
+            color: #000000;
+        }
+
+        .popup-item:hover, .popup-item.hl {
+            background: #000000;
+            color: var(--green);
+            text-shadow: 0 0 3px var(--green);
+        }
+
+        .popup-sep {
+            border-top: 1px solid #000000;
+            margin: 2px 6px;
+            opacity: 0.4;
+        }
+
+        /* ── TICKER BAR ── */
+        .ticker-bar {
+            background: var(--ticker-bg);
+            color: var(--green);
+            text-shadow: 0 0 2px var(--green);
+            font-size: 21px;
+            padding: 2px 6px;
+            flex-shrink: 0;
+            overflow: hidden;
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+        .ticker-track {
+            display: flex;
+            width: max-content;
+            animation: ticker-scroll 45s linear infinite;
+        }
+        .ticker-text {
+            white-space: nowrap;
+            padding-right: 3em;
+        }
+        @keyframes ticker-scroll {
+            0%   { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
+
+        /* ── URL BAR ── */
+        .url-bar {
+            background: var(--accent1);
+            color: #000000;
+            text-shadow: none;
+            font-size: 20px;
+            padding: 2px 10px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: relative;
+        }
+
+        .url-left {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .url-session {
+            font-size: 18px;
+        }
+
+        /* Cursor: flashes between normal and inverse (black on var(--green)) */
+        .cursor {
+            color: #000000;
+            animation: cursor-inv-blink 1s step-end infinite;
+        }
+        .content .cursor {
+            color: var(--green);
+        }
+
+        @keyframes cursor-inv-blink {
+            0%, 50% {
+                background: transparent;
+                color: inherit;
+                text-shadow: inherit;
+            }
+            50.01%, 100% {
+                background: var(--green);
+                color: #000000 !important;
+                text-shadow: none;
+            }
+        }
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+
+        /* Boot screen */
+        .boot-screen, .main-content {
+            position: absolute;
+            inset: 0;
+            padding: 10px 16px;
+            overflow-y: auto;
+        }
+        .boot-screen { z-index: 1; }
+        .main-content {
+            display: none;
+            z-index: 0;
+        }
+        .main-content.visible { display: block; }
+        .boot-screen.fade-out { opacity: 0; pointer-events: none; transition: opacity 0.6s ease-out; }
+        .boot-line { display: block; min-height: 1.35em; }
+        .boot-line .c { display: inline; }
+        .boot-status-ok { color: inherit; }
+        .boot-status-corrupted {
+            background: var(--green);
+            color: var(--bg);
+            padding: 0 4px;
+            text-shadow: none;
+            font-weight: bold;
+            letter-spacing: 2px;
+        }
+        .boot-prompt-line { display: block; margin-top: 0.5em; }
+        .boot-screen .cursor, .main-content .cursor { animation: cursor-inv-blink 1s step-end infinite; }
+        .main-content .cursor { color: var(--green); }
+        .fade-to-black { background: #000 !important; transition: background 0.8s ease-out; }
+        .fade-to-black .content { background: #000 !important; }
+
+        /* ── PORTFOLIO GRID ── */
+        #portfolioGrid {
+            display: none;
+            grid-template-columns: repeat(4, 1fr);
+            grid-template-rows: repeat(2, 1fr);
+            gap: 0;
+            position: absolute;
+            inset: 0;
+        }
+
+        .p-tile {
+            border: 1px solid var(--bg);
+            display: flex;
+            flex-direction: column;
+            cursor: pointer;
+            text-decoration: none;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .p-tile:hover .p-label {
+            opacity: 1;
+        }
+
+        .p-tile:hover .p-gif {
+            opacity: 1;
+        }
+
+        .p-gif {
+            flex: 1;
+            background: var(--bg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--green);
+            font-size: 18px;
+            opacity: 1;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .p-gif img,
+        .p-gif video {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .p-label {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--green);
+            color: #000000;
+            text-align: center;
+            font-size: 18px;
+            padding: 4px 0;
+            text-shadow: none;
+            letter-spacing: 2px;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        /* color theme transitions */
+        * { transition: color 0.2s, background-color 0.2s, text-shadow 0.2s; }
+        .terminal, .menu-bar, .ticker-bar, .url-bar, .dropdown, .submenu, .popup { transition: none; }
+    </style>
+</head>
+<body>
+
+<div class="terminal scanlines-on" id="terminal">
+
+    <!-- MENU BAR -->
+    <div class="menu-bar" id="menuBar">
+        <div class="menu-items">
+
+            <!-- FILE -->
+            <div class="menu-item" id="mFile" onclick="toggleMenu('mFile', event)">
+                <span data-i18n="menu_file"><u>F</u>ile</span>
+                <div class="dropdown">
+                    <div class="dd-item" onclick="closeAll(); window.open(window.location.href, '_blank');" data-i18n="file_newwin">New window</div>
+                    <div class="dd-item has-sub" id="fileOpenSubTrigger" onmouseenter="showFileOpenSub()" onmouseleave="hideFileOpenSub()">
+                        <span data-i18n="file_open">Open</span>
+                        <span>›</span>
+                        <div class="submenu" id="fileOpenSubmenu" onmouseenter="showFileOpenSub()" onmouseleave="hideFileOpenSub()">
+                            <div class="sub-item" onclick="closeAll(); window.open('https://woundheir.com/art', '_blank');" data-i18n="link_art">Visual art</div>
+                            <div class="sub-item has-sub" id="musicSubTriggerFile" onmouseenter="showMusicSubFile()" onmouseleave="hideMusicSubFile()">
+                                <span data-i18n="link_music">Music</span>
+                                <span>›</span>
+                                <div class="submenu" id="musicSubmenuFile" onmouseenter="showMusicSubFile()" onmouseleave="hideMusicSubFile()">
+                                    <div class="sub-item" onclick="closeAll(); window.open('https://woundheir.com/bandcamp', '_blank');" data-i18n="link_bandcamp">Bandcamp</div>
+                                    <div class="sub-item" onclick="closeAll(); window.open('https://woundheir.com/soundcloud', '_blank');" data-i18n="link_soundcloud">Soundcloud</div>
+                                </div>
+                            </div>
+                            <div class="sub-item" onclick="closeAll(); window.open('https://woundheir.itch.io', '_blank');" data-i18n="link_games">Games</div>
+                            <div class="sub-item" onclick="closeAll(); window.open('https://woundheir.com/merch', '_blank');" data-i18n="link_shop">Shop</div>
+                        </div>
+                    </div>
+                    <div class="dd-sep"></div>
+                    <div class="dd-item" onclick="closeAll(); window.open('https://woundheir.com/merch', '_blank');" data-i18n="file_print">Print</div>
+                    <div class="dd-sep"></div>
+                    <div class="dd-item" onclick="closeAll(); window.close();" data-i18n="file_exit">Exit</div>
+                </div>
+            </div>
+
+            <!-- VIEW -->
+            <div class="menu-item" id="mView" onclick="toggleMenu('mView', event)">
+                <span data-i18n="menu_view"><u>V</u>iew</span>
+                <div class="dropdown">
+                    <div class="dd-item hl" data-i18n="view_normal">Default view</div>
+                    <div class="dd-item" onclick="toggleFullscreen()" data-i18n="view_full">Fullscreen</div>
+                    <div class="dd-item" onclick="location.reload()" data-i18n="view_reload">Refresh signal</div>
+                    <div class="dd-item" onclick="viewSource()" data-i18n="view_source">Source</div>
+                </div>
+            </div>
+
+            <!-- LINK: Visual art, Music, Games, Shop, Portfolio, Socials -->
+            <div class="menu-item" id="mLink" onclick="toggleMenu('mLink', event)">
+                <span data-i18n="menu_link"><u>L</u>ink</span>
+                <div class="dropdown">
+                    <div class="dd-item" onclick="closeAll(); window.open('https://woundheir.com/art', '_blank');" data-i18n="link_art">Visual art</div>
+                    <div class="dd-item has-sub" id="musicSubTriggerLink" onmouseenter="showMusicSubLink()" onmouseleave="hideMusicSubLink()">
+                        <span data-i18n="link_music">Music</span>
+                        <span>›</span>
+                        <div class="submenu" id="musicSubmenuLink" onmouseenter="showMusicSubLink()" onmouseleave="hideMusicSubLink()">
+                            <div class="sub-item" onclick="closeAll(); window.open('https://woundheir.com/bandcamp', '_blank');" data-i18n="link_bandcamp">Bandcamp</div>
+                            <div class="sub-item" onclick="closeAll(); window.open('https://woundheir.com/soundcloud', '_blank');" data-i18n="link_soundcloud">Soundcloud</div>
+                        </div>
+                    </div>
+                    <div class="dd-item" onclick="closeAll(); window.open('https://woundheir.itch.io', '_blank');" data-i18n="link_games">Games</div>
+                    <div class="dd-item" onclick="closeAll(); window.open('https://woundheir.com/merch', '_blank');" data-i18n="link_shop">Shop</div>
+                    <div class="dd-item has-sub" id="portfolioSubTriggerLink" onmouseenter="showPortfolioSubLink()" onmouseleave="hidePortfolioSubLink()">
+                        <span data-i18n="link_portfolio">Portfolio</span>
+                        <span>›</span>
+                        <div class="submenu" id="portfolioSubmenuLink" onmouseenter="showPortfolioSubLink()" onmouseleave="hidePortfolioSubLink()">
+                            <div class="sub-item" onclick="closeAll(); window.open('https://www.artstation.com/woundheir', '_blank');" data-i18n="link_artstation">Artstation</div>
+                        </div>
+                    </div>
+                    <div class="dd-item has-sub" id="socialsSubTriggerLink" onmouseenter="showSocialsSubLink()" onmouseleave="hideSocialsSubLink()">
+                        <span data-i18n="link_socials">Socials</span>
+                        <span>›</span>
+                        <div class="submenu" id="socialsSubmenuLink" onmouseenter="showSocialsSubLink()" onmouseleave="hideSocialsSubLink()">
+                            <div class="sub-item" onclick="closeAll(); window.open('https://x.com/woundheir', '_blank');" data-i18n="link_x">X (Twitter)</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- DOWNLOADS -->
+            <div class="menu-item" id="mDownloads" onclick="toggleMenu('mDownloads', event)">
+                <span data-i18n="menu_dl"><u>D</u>ownloads</span>
+                <div class="dropdown">
+                    <div class="dd-item" onclick="closeAll(); window.open('https://woundheir.com/bandcamp', '_blank');" data-i18n="dl_music">Music</div>
+                    <div class="dd-item" onclick="closeAll(); window.open('https://woundheir.com/wallpaper', '_blank');" data-i18n="dl_wall">Wallpaper</div>
+                </div>
+            </div>
+
+            <!-- SETUP -->
+            <div class="menu-item" id="mSetup" onclick="toggleMenu('mSetup', event)">
+                <span data-i18n="menu_setup"><u>S</u>etup</span>
+                <div class="dropdown" style="min-width:250px;">
+                    <!-- Language with submenu -->
+                    <div class="dd-item has-sub" id="langSubTrigger" onmouseenter="showLangSub()" onmouseleave="hideLangSub()">
+                        <span data-i18n="setup_lang">Language</span>
+                        <span>›</span>
+                        <div class="submenu" id="langSubmenu" onmouseenter="showLangSub()" onmouseleave="hideLangSub()">
+                            <div class="sub-item active-lang" id="lang-en" onclick="setLang('en', event)">English ✓</div>
+                        </div>
+                    </div>
+                    <!-- Terminal options — opens popup -->
+                    <div class="dd-item" onclick="openPopup('terminalPopup', event)" data-i18n="setup_terminal">Terminal options</div>
+                    <div class="dd-sep"></div>
+                    <div class="dd-item" onclick="resetTerminalOptions()" data-i18n="setup_reset">Reset terminal to defaults</div>
+                </div>
+            </div>
+
+            <!-- HELP -->
+            <div class="menu-item" id="mHelp" onclick="toggleMenu('mHelp', event)">
+                <span data-i18n="menu_help"><u>H</u>elp</span>
+                <div class="dropdown">
+                    <div class="dd-item" onclick="openPopup('aboutPopup', event)" data-i18n="help_about">About</div>
+                    <div class="dd-item" onclick="closeAll(); window.location.href='mailto:hello@woundheir.com';" data-i18n="help_contact">Contact</div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- CLOCK -->
+        <div class="clock" id="clock">0000-00-00 &nbsp; 00:00:00</div>
+    </div>
+
+    <!-- TICKER -->
+    <div class="ticker-bar">
+        <div class="ticker-track">
+            <span class="ticker-text">► For better experience use fullscreen — View › Fullscreen ◄ &nbsp;&nbsp; • &nbsp;&nbsp; ► Customize your terminal — Setup › Terminal options › Color scheme ◄</span>
+            <span class="ticker-text">► For better experience use fullscreen — View › Fullscreen ◄ &nbsp;&nbsp; • &nbsp;&nbsp; ► Customize your terminal — Setup › Terminal options › Color scheme ◄</span>
+        </div>
+    </div>
+
+    <!-- CONTENT -->
+    <div class="content" id="content" onclick="closeAll()">
+
+        <div id="bootScreen" class="boot-screen">
+            <div id="bootLines"></div>
+
+            <!-- PORTFOLIO GRID — appears after boot -->
+            <div id="portfolioGrid">
+                <a href="https://objkt.com/tokens/open_objkt/30243" target="_blank" class="p-tile">
+                    <div class="p-gif">
+                        <img src="gifs/latest-artwork.gif" alt="">
+                    </div>
+                    <div class="p-label">LATEST ARTWORK</div>
+                </a>
+                <a href="https://objkt.com/users/tz1ZsKoaQgjZegNKE7P9Rn9DyUtetFvdJQcm" target="_blank" class="p-tile">
+                    <div class="p-gif">
+                        <img src="gifs/objkt.gif" alt="">
+                    </div>
+                    <div class="p-label">OBJKT</div>
+                </a>
+                <a href="https://katod-project.itch.io/" target="_blank" class="p-tile">
+                    <div class="p-gif">
+                        <img src="gifs/itch.gif" alt="">
+                    </div>
+                    <div class="p-label">ITCH.IO</div>
+                </a>
+                <a href="https://www.artstation.com/woundheir" target="_blank" class="p-tile">
+                    <div class="p-gif">
+                        <img src="gifs/artstation.gif" alt="">
+                    </div>
+                    <div class="p-label">ARTSTATION</div>
+                </a>
+                <a href="https://teia.art/woundheir" target="_blank" class="p-tile">
+                    <div class="p-gif">
+                        <img src="gifs/teia.gif" alt="">
+                    </div>
+                    <div class="p-label">TEIA</div>
+                </a>
+                <a href="https://x.com/woundheir__" target="_blank" class="p-tile">
+                    <div class="p-gif">
+                        <img src="gifs/x.gif" alt="">
+                    </div>
+                    <div class="p-label">X</div>
+                </a>
+                <a href="https://soundcloud.com/woundheir" target="_blank" class="p-tile">
+                    <div class="p-gif">
+                        <img src="gifs/soundcloud.gif" alt="">
+                    </div>
+                    <div class="p-label">SOUNDCLOUD</div>
+                </a>
+                <a href="#" class="p-tile">
+                    <div class="p-gif">
+                        <img src="gifs/empty.gif" alt="">
+                    </div>
+                    <div class="p-label">— — —</div>
+                </a>
+            </div>
+        </div>
+
+        <!-- TERMINAL OPTIONS POPUP -->
+        <div class="popup" id="terminalPopup" style="left:30%;">
+            <div class="popup-head" data-i18n="setup_terminal">Terminal options</div>
+            <div class="popup-item popup-section" style="opacity:0.6; cursor:default; font-size:17px;">── Color scheme ──</div>
+            <div class="popup-item hl-color hl" onclick="setColor('zxspectrum', this)">ZX Spectrum (default)</div>
+            <div class="popup-item hl-color" onclick="setColor('norton', this)">Norton Commander</div>
+            <div class="popup-item hl-color" onclick="setColor('teletext', this)">Teletext</div>
+            <div class="popup-item hl-color" onclick="setColor('casiofx330', this)">Casio FX-330</div>
+            <div class="popup-item hl-color" onclick="setColor('win95', this)">Windows 95</div>
+            <div class="popup-item hl-color" onclick="setColor('nokia3310', this)">Nokia 3310</div>
+            <div class="popup-item hl-color" onclick="setColor('c64', this)">Commodore 64</div>
+            <div class="popup-item popup-section" style="opacity:0.6; cursor:default; font-size:17px;">── Font ──</div>
+            <div class="popup-item hl" onclick="setFont('Courier New', this)">Courier New (default)</div>
+            <div class="popup-sep"></div>
+            <div class="popup-item popup-section" style="opacity:0.6; cursor:default; font-size:17px;">── Effects ──</div>
+            <div class="popup-item" id="opt-scan" onclick="toggleScanlines(this)">Scanlines &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [ ON ]</div>
+            <div class="popup-item" id="opt-flicker" onclick="toggleFlicker(this)">CRT Flicker &nbsp;&nbsp;&nbsp; [ OFF ]</div>
+            <div class="popup-item" id="opt-glitch" onclick="toggleGlitch(this)">Glitch &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [ OFF ]</div>
+            <div class="popup-item" id="opt-noise" onclick="toggleNoise(this)">Static noise &nbsp;&nbsp; [ OFF ]</div>
+            <div class="popup-item" id="opt-dynoise" onclick="toggleDynoise(this)">Dynamic noise &nbsp; [ OFF ]</div>
+            <div class="popup-item" id="opt-rgb" onclick="toggleRgb(this)">RGB split &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [ OFF ]</div>
+            <div class="popup-item" id="opt-roll" onclick="toggleRoll(this)">Rolling bar &nbsp;&nbsp;&nbsp; [ OFF ]</div>
+            <div class="popup-item" id="opt-vignette" onclick="toggleVignette(this)">Vignette &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [ OFF ]</div>
+            <div class="popup-item" id="opt-raster" onclick="toggleRaster(this)">Raster bars &nbsp;&nbsp; [ OFF ]</div>
+            <div class="popup-item" id="opt-hhold" onclick="toggleHhold(this)">Horiz. hold &nbsp;&nbsp; [ OFF ]</div>
+            <div class="popup-item" id="opt-afterglow" onclick="toggleAfterglow(this)">Afterglow &nbsp;&nbsp;&nbsp;&nbsp; [ OFF ]</div>
+            <div class="popup-item" id="opt-bleed" onclick="toggleBleed(this)">Pixel bleed &nbsp;&nbsp; [ OFF ]</div>
+            <div class="popup-item" id="opt-poweroff" onclick="togglePoweroff(this)">Power off &nbsp;&nbsp;&nbsp;&nbsp; [ OFF ]</div>
+            <div class="popup-sep"></div>
+            <div class="popup-item" onclick="closePopup('terminalPopup')" data-i18n="btn_close">[ Close ]</div>
+        </div>
+
+        <!-- ABOUT POPUP -->
+        <div class="popup" id="aboutPopup" style="left:25%; min-width:300px;">
+            <div class="popup-head" data-i18n="help_about">About</div>
+            <div class="popup-item" style="cursor:default;">woundheir — a digital artist</div>
+            <div class="popup-sep"></div>
+            <div class="popup-item" onclick="closePopup('aboutPopup')" data-i18n="btn_close">[ Close ]</div>
+        </div>
+
+    </div>
+
+    <!-- URL BAR -->
+    <div class="url-bar" id="urlBar">
+        <div class="url-left">
+            <span id="urlText">http://woundheir.com</span>
+        </div>
+        <span class="url-session" id="sessionTimer">session 00:00</span>
+    </div>
+
+</div>
+
+<script>
+    // ── i18n strings ──
+    const i18n = {
+        en: {
+            menu_file:'<u>F</u>ile', menu_view:'<u>V</u>iew', menu_link:'<u>L</u>ink',
+            menu_dl:'<u>D</u>ownloads', menu_setup:'<u>S</u>etup', menu_help:'<u>H</u>elp',
+            file_open:'Open', file_newwin:'New window', file_print:'Print', file_exit:'Exit',
+            view_normal:'Default view', view_full:'Fullscreen', view_reload:'Refresh signal', view_source:'Source',
+            link_art:'Visual art', link_music:'Music', link_bandcamp:'Bandcamp', link_soundcloud:'Soundcloud',
+            link_games:'Games', link_shop:'Shop', link_portfolio:'Portfolio', link_artstation:'Artstation',
+            link_socials:'Socials', link_x:'X (Twitter)',
+            dl_music:'Music', dl_wall:'Wallpaper',
+            setup_lang:'Language', setup_terminal:'Terminal options', setup_misc:'Miscellaneous options',
+            setup_cache:'Cache', setup_mail:'Mail and telnet', setup_assoc:'Associations',
+            setup_ext:'File extensions', setup_save:'Save options',
+            setup_reset:'Reset terminal to defaults',
+            help_about:'About', help_contact:'Contact',
+            term_color:'── Color scheme ──', term_green:'Green (default)', term_amber:'Amber',
+            term_white:'White', term_red:'Red', term_blue:'Blue', term_dosblue:'MS-DOS blue',
+            term_apple2:'Apple II green', term_c64:'Commodore 64', term_teletext:'Teletext', term_casio:'Casio / Retro display',
+            term_mode:'── Display mode ──',
+            mode_mono:'Monochrome colors', mode_dos:'MS-DOS blue (default)',
+            term_font:'── Font ──', font_vt:'VT323', font_courier:'Consolas',
+            font_mono:'Courier New (default)',
+            misc_scan:'Scanlines', misc_flicker:'CRT Flicker',
+            btn_close:'[ Close ]',
+        }
+    };
+
+    let currentLang = 'en';
+    let langSubHideTimer = null;
+
+    function showLangSub() {
+        if (langSubHideTimer) clearTimeout(langSubHideTimer);
+        langSubHideTimer = null;
+        const sub = document.getElementById('langSubmenu');
+        if (sub) sub.style.display = 'block';
+    }
+
+    function hideLangSub() {
+        langSubHideTimer = setTimeout(() => {
+            const sub = document.getElementById('langSubmenu');
+            if (sub) sub.style.display = 'none';
+            langSubHideTimer = null;
+        }, 150);
+    }
+
+    let musicSubLinkHideTimer = null;
+    let fileOpenSubHideTimer = null;
+    let musicSubFileHideTimer = null;
+
+    function showFileOpenSub() {
+        if (fileOpenSubHideTimer) clearTimeout(fileOpenSubHideTimer);
+        fileOpenSubHideTimer = null;
+        const sub = document.getElementById('fileOpenSubmenu');
+        if (sub) sub.style.display = 'block';
+        const musicSub = document.getElementById('musicSubmenuFile');
+        if (musicSub) musicSub.style.display = 'none';
+    }
+    function hideFileOpenSub() {
+        fileOpenSubHideTimer = setTimeout(() => {
+            const sub = document.getElementById('fileOpenSubmenu');
+            if (sub) sub.style.display = 'none';
+            fileOpenSubHideTimer = null;
+        }, 150);
+    }
+    function showMusicSubFile() {
+        if (musicSubFileHideTimer) clearTimeout(musicSubFileHideTimer);
+        musicSubFileHideTimer = null;
+        const sub = document.getElementById('musicSubmenuFile');
+        if (sub) sub.style.display = 'block';
+    }
+    function hideMusicSubFile() {
+        musicSubFileHideTimer = setTimeout(() => {
+            const sub = document.getElementById('musicSubmenuFile');
+            if (sub) sub.style.display = 'none';
+            musicSubFileHideTimer = null;
+        }, 150);
+    }
+    function showMusicSubLink() {
+        if (musicSubLinkHideTimer) clearTimeout(musicSubLinkHideTimer);
+        musicSubLinkHideTimer = null;
+        const sub = document.getElementById('musicSubmenuLink');
+        if (sub) sub.style.display = 'block';
+    }
+    function hideMusicSubLink() {
+        musicSubLinkHideTimer = setTimeout(() => {
+            const sub = document.getElementById('musicSubmenuLink');
+            if (sub) sub.style.display = 'none';
+            musicSubLinkHideTimer = null;
+        }, 150);
+    }
+
+    let portfolioSubLinkHideTimer = null;
+    let socialsSubLinkHideTimer = null;
+    function showPortfolioSubLink() {
+        if (portfolioSubLinkHideTimer) clearTimeout(portfolioSubLinkHideTimer);
+        portfolioSubLinkHideTimer = null;
+        const sub = document.getElementById('portfolioSubmenuLink');
+        if (sub) sub.style.display = 'block';
+    }
+    function hidePortfolioSubLink() {
+        portfolioSubLinkHideTimer = setTimeout(() => {
+            const sub = document.getElementById('portfolioSubmenuLink');
+            if (sub) sub.style.display = 'none';
+            portfolioSubLinkHideTimer = null;
+        }, 150);
+    }
+    function showSocialsSubLink() {
+        if (socialsSubLinkHideTimer) clearTimeout(socialsSubLinkHideTimer);
+        socialsSubLinkHideTimer = null;
+        const sub = document.getElementById('socialsSubmenuLink');
+        if (sub) sub.style.display = 'block';
+    }
+    function hideSocialsSubLink() {
+        socialsSubLinkHideTimer = setTimeout(() => {
+            const sub = document.getElementById('socialsSubmenuLink');
+            if (sub) sub.style.display = 'none';
+            socialsSubLinkHideTimer = null;
+        }, 150);
+    }
+
+    let linkOpenSubHideTimer = null;
+    function showLinkOpenSub() {
+        if (linkOpenSubHideTimer) clearTimeout(linkOpenSubHideTimer);
+        linkOpenSubHideTimer = null;
+        const sub = document.getElementById('linkOpenSubmenu');
+        if (sub) sub.style.display = 'block';
+    }
+    function hideLinkOpenSub() {
+        linkOpenSubHideTimer = setTimeout(() => {
+            const sub = document.getElementById('linkOpenSubmenu');
+            if (sub) sub.style.display = 'none';
+            linkOpenSubHideTimer = null;
+        }, 150);
+    }
+
+    function setLang(lang, e) {
+        e.stopPropagation();
+        currentLang = lang;
+        // Update lang indicators
+        ['en'].forEach(l => {
+            const el = document.getElementById('lang-' + l);
+            const names = {en:'English'};
+            el.textContent = names[l] + (l === lang ? ' ✓' : '');
+            el.classList.toggle('active-lang', l === lang);
+        });
+        // Apply translations
+        document.querySelectorAll('[data-i18n]').forEach(el => {
+            const key = el.getAttribute('data-i18n');
+            if (i18n[lang][key]) el.innerHTML = i18n[lang][key];
+        });
+        // Update date format
+        updateClock();
+        urlGo('woundheir.com/setup/language/' + lang);
+        closeAll();
+    }
+
+    // ── Color themes ──
+    const themes = {
+        // Monochrome-style CRT colors
+        green:   { green: '#3bff00', bg: '#000000', accent1: '#3bff00', accent2: '#3bff00', tickerBg: '#0d3300' },
+        amber:   { green: '#ffb000', bg: '#0a0500', accent1: '#ffb000', accent2: '#ffb000', tickerBg: '#2a2000' },
+        white:   { green: '#e8e8e8', bg: '#050505', accent1: '#e8e8e8', accent2: '#e8e8e8', tickerBg: '#2a2a2a' },
+        red:     { green: '#ff3a3a', bg: '#0a0000', accent1: '#ff3a3a', accent2: '#ff3a3a', tickerBg: '#330a0a' },
+        blue:    { green: '#3ab4ff', bg: '#00050a', accent1: '#3ab4ff', accent2: '#3ab4ff', tickerBg: '#000d33' },
+        // System themes
+        dosblue: {
+            green:   '#C0C0C0',
+            bg:      '#0000AA',
+            accent1: '#0055DD',
+            accent2: '#FFFFFF',
+            tickerBg: '#002244',
+        },
+        apple2:  {
+            green:   '#63FF63',
+            bg:      '#001000',
+            accent1: '#63FF63',
+            accent2: '#63FF63',
+            tickerBg: '#002200',
+        },
+        c64:     {
+            green:   '#70A4B2',
+            bg:      '#40318D',
+            accent1: '#6C5EB5',
+            accent2: '#FFFFFF',
+            tickerBg: '#2a2060',
+        },
+        teletext:{
+            green:   '#FFFF00',
+            bg:      '#0000A8',
+            accent1: '#0000FF',
+            accent2: '#FF0000',
+            tickerBg: '#000060',
+        },
+
+        // Teletext Red — inverted, red takes over, BBC urgent news feel
+        // Casio FX-7000G 1985 — world's first graphing calculator, grey-green LCD, dark green text
+        casiofx7000g: {
+            green:   '#1a3300',
+            bg:      '#7a9966',
+            accent1: '#4a6644',
+            accent2: '#1a3300',
+            tickerBg: '#3d5533',
+            chromeBg:      '#4a6644',
+            chromeHeadBg:  '#1a3300',
+            chromeHeadFg:  '#7a9966',
+            chromeHoverFg: '#aaccaa',
+        },
+
+        // Nokia 3310 2000 — bright sage/mint green screen, near-black pixel art
+        nokia3310: {
+            green:   '#1a2a0a',
+            bg:      '#A8C878',
+            accent1: '#5a7a33',
+            accent2: '#1a2a0a',
+            tickerBg: '#3d5520',
+            chromeBg:      '#5a7a33',
+            chromeHeadBg:  '#1a2a0a',
+            chromeHeadFg:  '#A8C878',
+            chromeHoverFg: '#d4f0a0',
+        },
+
+        // View menu screenshot — red bar, yellow dropdown, black text on yellow
+        // Commodore 64 — yellow text on black, red border, light blue highlight, 1982
+        c64: {
+            green:   '#FFFF66',
+            bg:      '#000000',
+            accent1: '#CC0000',
+            accent2: '#6699FF',
+            tickerBg: '#1a0000',
+            chromeBg:      '#CC0000',
+            chromeHeadBg:  '#880000',
+            chromeHeadFg:  '#FFFF66',
+            chromeHoverFg: '#6699FF',
+        },
+
+        // Casio A168W Gold — electroluminescent backlight, gold vintage bracelet watch
+        casioa168gold: {
+            green:   '#000000',
+            bg:      '#C8A84B',
+            accent1: '#8B6914',
+            accent2: '#000000',
+            tickerBg: '#7a5c0a',
+            chromeBg:      '#8B6914',
+            chromeHeadBg:  '#000000',
+            chromeHeadFg:  '#FFD700',
+            chromeHoverFg: '#FFFFFF',
+        },
+
+        // Casio FX-330 — scientific calculator, grey-green LCD, dark segment digits, charcoal header
+        casiofx330: {
+            green:   '#2a3020',
+            bg:      '#b8c4a0',
+            accent1: '#2a2a28',
+            accent2: '#c8700a',
+            tickerBg: '#888f78',
+            chromeBg:      '#2a2a28',
+            chromeHeadBg:  '#1a1a18',
+            chromeHeadFg:  '#b8c4a0',
+            chromeHoverFg: '#e8f0d0',
+        },
+
+        // Casio Databank DB-360 — silver calculator watch, blue EL backlight, 1990s executive
+        casiodb360: {
+            green:   '#AADDFF',
+            bg:      '#001133',
+            accent1: '#0033AA',
+            accent2: '#FFFFFF',
+            tickerBg: '#000a22',
+        },
+
+        // Casio AL-180 1981 — first LCD alarm watch, warm champagne gold bezel, cream display
+        casioal180: {
+            green:   '#1a1200',
+            bg:      '#D4C48A',
+            accent1: '#8B7A3A',
+            accent2: '#1a1200',
+            tickerBg: '#6b5a1a',
+            chromeBg:      '#8B7A3A',
+            chromeHeadBg:  '#1a1200',
+            chromeHeadFg:  '#D4C48A',
+            chromeHoverFg: '#FFFFFF',
+        },
+
+        // Casio W-86 Retro — cobalt blue face, iconic 80s sports watch
+        casiow86: {
+            green:   '#FFFFFF',
+            bg:      '#0033AA',
+            accent1: '#0055DD',
+            accent2: '#FFFF00',
+            tickerBg: '#001166',
+        },
+        casio: {
+            green:   '#000000',
+            bg:      '#A1B499',
+            accent1: '#8E9499',
+            accent2: '#DC1D27',
+            tickerBg: '#5a6b52',
+            chromeBg:      '#8E9499',
+            chromeHeadBg:  '#8E9499',
+            chromeHeadFg:  '#000000',
+            chromeHoverFg: '#E0E0E0',
+        },
+
+        // ── NEW LEGENDARY MACHINES ──
+
+        // ZX Spectrum — bright cyan on black, magenta accents, British 1982
+        zxspectrum: {
+            green:   '#00FFFF',
+            bg:      '#000000',
+            accent1: '#FF00FF',
+            accent2: '#FFFF00',
+            tickerBg: '#0000CC',
+        },
+
+        // Macintosh 128k — inverted, white screen, black text, 1984
+        mac128: {
+            green:   '#000000',
+            bg:      '#DDDDDD',
+            accent1: '#999999',
+            accent2: '#000000',
+            tickerBg: '#bbbbbb',
+            chromeBg:      '#999999',
+            chromeHeadBg:  '#000000',
+            chromeHeadFg:  '#DDDDDD',
+            chromeHoverFg: '#FFFFFF',
+        },
+
+        // BBC Micro — stark white on black, very British, 1981
+        bbcmicro: {
+            green:   '#FFFFFF',
+            bg:      '#000022',
+            accent1: '#FF4400',
+            accent2: '#FFFF00',
+            tickerBg: '#110011',
+        },
+
+        // Atari ST — warm grey on dark navy, GEM desktop vibes, 1985
+        atarist: {
+            green:   '#CCCCAA',
+            bg:      '#1a1a2e',
+            accent1: '#4a4a8a',
+            accent2: '#FF6622',
+            tickerBg: '#0d0d1a',
+        },
+
+        // IBM 5150 — deep olive/green on near-black, the original PC, 1981
+        ibm5150: {
+            green:   '#AAFFAA',
+            bg:      '#0a0a00',
+            accent1: '#336633',
+            accent2: '#AAFFAA',
+            tickerBg: '#001100',
+        },
+
+        // NeXT Computer — elegant black/white/grey, Steve Jobs 1988
+        next: {
+            green:   '#CCCCCC',
+            bg:      '#1a1a1a',
+            accent1: '#444444',
+            accent2: '#FFFFFF',
+            tickerBg: '#111111',
+            chromeBg:      '#444444',
+            chromeHeadBg:  '#111111',
+            chromeHeadFg:  '#CCCCCC',
+            chromeHoverFg: '#FFFFFF',
+        },
+
+        // Amiga Workbench — iconic blue/orange, Commodore 1985
+        amiga: {
+            green:   '#AAAAAA',
+            bg:      '#0055AA',
+            accent1: '#FF8800',
+            accent2: '#FFFFFF',
+            tickerBg: '#003377',
+        },
+
+        // Sharp MZ-80 — Japanese micro, white on dark red, 1979
+        sharpmz: {
+            green:   '#FFFFFF',
+            bg:      '#0a0000',
+            accent1: '#CC0000',
+            accent2: '#FFFFFF',
+            tickerBg: '#1a0000',
+        },
+
+        // Osborne 1 — first portable computer, phosphor green, 1981
+        osborne: {
+            green:   '#5dfc5d',
+            bg:      '#020a02',
+            accent1: '#2a7a2a',
+            accent2: '#5dfc5d',
+            tickerBg: '#011001',
+        },
+
+        // Vectrex — vector game console, white/red, pure minimal, 1982
+        vectrex: {
+            green:   '#F0F0F0',
+            bg:      '#000000',
+            accent1: '#F0F0F0',
+            accent2: '#FF3333',
+            tickerBg: '#111111',
+        },
+
+        // Altair 8800 — blinkenlight orange, first personal computer, 1975
+        altair: {
+            green:   '#FF6600',
+            bg:      '#0a0500',
+            accent1: '#CC4400',
+            accent2: '#FFAA00',
+            tickerBg: '#1a0a00',
+        },
+
+        // TRS-80 — Radio Shack "Trash 80", cool grey, 1977
+        trs80: {
+            green:   '#D4D4D4',
+            bg:      '#000000',
+            accent1: '#888888',
+            accent2: '#FFFFFF',
+            tickerBg: '#1a1a1a',
+        },
+
+        // Sinclair QL — bright red on dark, office machine, 1984
+        sinclairql: {
+            green:   '#FF2200',
+            bg:      '#111111',
+            accent1: '#CC1100',
+            accent2: '#FFFF00',
+            tickerBg: '#220000',
+        },
+
+        // MSX — Microsoft/ASCII standard, Japan/Europe, 1983
+        msx: {
+            green:   '#00DDBB',
+            bg:      '#000033',
+            accent1: '#0000AA',
+            accent2: '#FFFFFF',
+            tickerBg: '#000022',
+        },
+
+        // ── CASIO UNIVERSE ──
+
+        // Casio CQ-1 1976 — world's first multifunctional digital clock, red body
+        casiocq1: {
+            green:   '#000000',
+            bg:      '#CC2200',
+            accent1: '#991100',
+            accent2: '#FFFF00',
+            tickerBg: '#7a1100',
+            chromeBg:      '#991100',
+            chromeHeadBg:  '#000000',
+            chromeHeadFg:  '#FF4422',
+            chromeHoverFg: '#FFFF00',
+        },
+
+        // Casio CA-53W "Walter White" — black LCD calculator watch, Breaking Bad
+        casioca53: {
+            green:   '#88ffaa',
+            bg:      '#111111',
+            accent1: '#222222',
+            accent2: '#88ffaa',
+            tickerBg: '#0a0a0a',
+        },
+
+        // Casio SL-800 1983 — world's thinnest calculator, black & gold
+        casiosl800: {
+            green:   '#FFD700',
+            bg:      '#111111',
+            accent1: '#333300',
+            accent2: '#FFD700',
+            tickerBg: '#1a1500',
+        },
+
+        // Casio A168W Gold — retro gold vintage, electroluminescent display
+        casiogold: {
+            green:   '#000000',
+            bg:      '#C8A84B',
+            accent1: '#8B6914',
+            accent2: '#000000',
+            tickerBg: '#7a5c0a',
+            chromeBg:      '#8B6914',
+            chromeHeadBg:  '#000000',
+            chromeHeadFg:  '#FFD700',
+            chromeHoverFg: '#FFFFFF',
+        },
+
+        // Casio CA-500 CQ-1 Yellow — heritage colors, 1976 tribute, yellow
+        casioyellow: {
+            green:   '#000000',
+            bg:      '#DDBB00',
+            accent1: '#AA8800',
+            accent2: '#FF4400',
+            tickerBg: '#886600',
+            chromeBg:      '#AA8800',
+            chromeHeadBg:  '#000000',
+            chromeHeadFg:  '#FFDD00',
+            chromeHoverFg: '#FFFFFF',
+        },
+
+        // Casio CA-53WF Army — green resin calculator watch, military
+        casioarmy: {
+            green:   '#AABB55',
+            bg:      '#1a2000',
+            accent1: '#2a3300',
+            accent2: '#DDFF44',
+            tickerBg: '#111500',
+        },
+
+        // Casio F-91W — the most sold watch ever, pure minimalist LCD
+        casiof91w: {
+            green:   '#000000',
+            bg:      '#C8C8B8',
+            accent1: '#888880',
+            accent2: '#000000',
+            tickerBg: '#999990',
+            chromeBg:      '#888880',
+            chromeHeadBg:  '#222222',
+            chromeHeadFg:  '#C8C8B8',
+            chromeHoverFg: '#FFFFFF',
+        },
+
+        // Casio G-Shock — tough black, orange accents, indestructible energy
+        casiogshock: {
+            green:   '#FF6600',
+            bg:      '#0a0a0a',
+            accent1: '#CC4400',
+            accent2: '#FF6600',
+            tickerBg: '#1a0800',
+        },
+
+        // ── MORE LEGENDS ──
+
+        // Wang Laboratories — office minicomputer, teal on dark, 1970s
+        wang: {
+            green:   '#00CCAA',
+            bg:      '#001a15',
+            accent1: '#004433',
+            accent2: '#00FFCC',
+            tickerBg: '#000f0a',
+        },
+
+        // Xerox Alto — first GUI computer, black on light grey, 1973
+        xeroxalto: {
+            green:   '#111111',
+            bg:      '#CCCCCC',
+            accent1: '#888888',
+            accent2: '#111111',
+            tickerBg: '#aaaaaa',
+            chromeBg:      '#888888',
+            chromeHeadBg:  '#222222',
+            chromeHeadFg:  '#CCCCCC',
+            chromeHoverFg: '#FFFFFF',
+        },
+
+        // Tandy Color Computer — warm red/white, Radio Shack 1980
+        tandy: {
+            green:   '#FFFFFF',
+            bg:      '#330000',
+            accent1: '#880000',
+            accent2: '#FF4444',
+            tickerBg: '#1a0000',
+        },
+
+        // NEC PC-88 — Japan's most beloved home computer, blue/white, 1981
+        nec88: {
+            green:   '#AACCFF',
+            bg:      '#000022',
+            accent1: '#0033AA',
+            accent2: '#FFFFFF',
+            tickerBg: '#000011',
+        },
+
+        // Fujitsu FM-7 — rival to NEC, vivid green phosphor, Japan 1982
+        fujitsufm7: {
+            green:   '#00FF88',
+            bg:      '#000000',
+            accent1: '#00AA55',
+            accent2: '#00FF88',
+            tickerBg: '#001a0a',
+        },
+
+        // Kaypro II — portable CP/M machine, blue-white on dark, 1982
+        kaypro: {
+            green:   '#CCE8FF',
+            bg:      '#001133',
+            accent1: '#003366',
+            accent2: '#FFFFFF',
+            tickerBg: '#000a1a',
+        },
+
+        // ── INTENSE / CRAZY ──
+
+        // ACID — psychedelic green on hot pink, pure rave energy
+        acid: {
+            green:   '#00FF00',
+            bg:      '#FF0088',
+            accent1: '#CC0066',
+            accent2: '#FFFF00',
+            tickerBg: '#880044',
+        },
+
+        // VAPORWAVE — pink text on deep purple, aesthetic 1990s internet
+        vaporwave: {
+            green:   '#FF71CE',
+            bg:      '#1a0033',
+            accent1: '#6600CC',
+            accent2: '#01CDFE',
+            tickerBg: '#330066',
+        },
+
+        // LAVA — molten orange on deep crimson, volcanic
+        lava: {
+            green:   '#FF4400',
+            bg:      '#1a0000',
+            accent1: '#CC2200',
+            accent2: '#FFAA00',
+            tickerBg: '#0a0000',
+        },
+
+        // TOXIC — radioactive lime on pitch black, biohazard
+        toxic: {
+            green:   '#CCFF00',
+            bg:      '#000000',
+            accent1: '#88AA00',
+            accent2: '#CCFF00',
+            tickerBg: '#111100',
+        },
+
+        // NEON TOKYO — hot pink on deep navy, shibuya crossing at night
+        neontokyo: {
+            green:   '#FF0066',
+            bg:      '#00001a',
+            accent1: '#CC0055',
+            accent2: '#00FFCC',
+            tickerBg: '#110022',
+        },
+
+        // DEEP SPACE — electric blue on near-black, cold cosmos
+        deepspace: {
+            green:   '#0088FF',
+            bg:      '#000008',
+            accent1: '#0044CC',
+            accent2: '#FF00FF',
+            tickerBg: '#000022',
+        },
+
+        // BLOOD MOON — dark red on black, full eclipse
+        bloodmoon: {
+            green:   '#FF0000',
+            bg:      '#0a0000',
+            accent1: '#880000',
+            accent2: '#FF4400',
+            tickerBg: '#1a0000',
+        },
+
+        // GLITCH — pure white text, purple bg, corrupted data
+        glitch: {
+            green:   '#FFFFFF',
+            bg:      '#220033',
+            accent1: '#FF00FF',
+            accent2: '#00FFFF',
+            tickerBg: '#110022',
+        },
+
+        // JUNGLE — deep emerald on dark, dense forest terminal
+        jungle: {
+            green:   '#00FF88',
+            bg:      '#001a08',
+            accent1: '#005522',
+            accent2: '#FFFF00',
+            tickerBg: '#000f04',
+        },
+
+        // SUNRISE — warm yellow-orange gradient feel, dawn energy
+        sunrise: {
+            green:   '#FFD700',
+            bg:      '#1a0500',
+            accent1: '#FF6600',
+            accent2: '#FF0044',
+            tickerBg: '#0a0200',
+        },
+
+        // CHROME — silver on black, metallic, machine cold
+        chrome: {
+            green:   '#C0C0C0',
+            bg:      '#050505',
+            accent1: '#888888',
+            accent2: '#FFFFFF',
+            tickerBg: '#1a1a1a',
+        },
+
+        // ULTRAVIOLET — deep purple text on near-black, UV lamp
+        ultraviolet: {
+            green:   '#CC44FF',
+            bg:      '#050005',
+            accent1: '#660099',
+            accent2: '#FF44FF',
+            tickerBg: '#110011',
+        },
+
+        // MATRIX RAIN — classic green on black, THE hacker film
+        matrix: {
+            green:   '#00FF41',
+            bg:      '#000000',
+            accent1: '#003B00',
+            accent2: '#00FF41',
+            tickerBg: '#001500',
+        },
+
+        // CANDY — bubblegum pink on white, totally wrong, very fun
+        candy: {
+            green:   '#FF1493',
+            bg:      '#FFF0F5',
+            accent1: '#FF69B4',
+            accent2: '#FF1493',
+            tickerBg: '#FFB6C1',
+            chromeBg:      '#FF69B4',
+            chromeHeadBg:  '#FF1493',
+            chromeHeadFg:  '#FFFFFF',
+            chromeHoverFg: '#FFFFFF',
+        },
+
+        // ICE — cold cyan on near-white, frozen terminal
+        ice: {
+            green:   '#000000',
+            bg:      '#E0F8FF',
+            accent1: '#88CCDD',
+            accent2: '#000000',
+            tickerBg: '#AADDEE',
+            chromeBg:      '#88CCDD',
+            chromeHeadBg:  '#005577',
+            chromeHeadFg:  '#E0F8FF',
+            chromeHoverFg: '#FFFFFF',
+        },
+
+        // ── MS-DOS VARIANTS ──
+
+        // Norton Commander — iconic blue panels, cyan menus, DOS legend 1986
+        norton: {
+            green:   '#FFFFFF',
+            bg:      '#0000AA',
+            accent1: '#00AAAA',
+            accent2: '#FFFF55',
+            tickerBg: '#000088',
+        },
+
+        // MS-DOS QBASIC — dark blue IDE, white text, yellow highlights
+        qbasic: {
+            green:   '#FFFFFF',
+            bg:      '#000088',
+            accent1: '#0000AA',
+            accent2: '#FFFF00',
+            tickerBg: '#000055',
+        },
+
+        // MS-DOS Turbo Pascal — Borland blue, cyan accents, legendary IDE
+        turbopascal: {
+            green:   '#FFFF55',
+            bg:      '#0000AA',
+            accent1: '#00AAAA',
+            accent2: '#FFFFFF',
+            tickerBg: '#003366',
+        },
+
+        // MS-DOS Red — COLOR 4F — bright white on full red, warning/danger prompt
+        dosred: {
+            green:   '#FFFFFF',
+            bg:      '#AA0000',
+            accent1: '#CC0000',
+            accent2: '#FFFF55',
+            tickerBg: '#770000',
+        },
+
+        // MS-DOS Magenta — COLOR 5F — white on purple, rare and weird
+        dosmagenta: {
+            green:   '#FFFFFF',
+            bg:      '#AA00AA',
+            accent1: '#CC00CC',
+            accent2: '#FFFF55',
+            tickerBg: '#660066',
+        },
+
+        // MS-DOS Green — COLOR 2F — white on green, old school terminal feel
+        dosgreen: {
+            green:   '#FFFFFF',
+            bg:      '#00AA00',
+            accent1: '#008800',
+            accent2: '#FFFF55',
+            tickerBg: '#005500',
+        },
+
+        // MS-DOS Cyan — COLOR 3F — white on aqua, rare hacker config
+        doscyan: {
+            green:   '#000000',
+            bg:      '#00AAAA',
+            accent1: '#007777',
+            accent2: '#FFFF00',
+            tickerBg: '#005555',
+            chromeBg:      '#007777',
+            chromeHeadBg:  '#000000',
+            chromeHeadFg:  '#00FFFF',
+            chromeHoverFg: '#FFFF00',
+        },
+
+        // MS-DOS Yellow — COLOR 6F — dark on yellow/brown, warm classic
+        dosyellow: {
+            green:   '#000000',
+            bg:      '#AA5500',
+            accent1: '#885500',
+            accent2: '#FFFF55',
+            tickerBg: '#553300',
+            chromeBg:      '#885500',
+            chromeHeadBg:  '#000000',
+            chromeHeadFg:  '#FFFF55',
+            chromeHoverFg: '#FFFFFF',
+        },
+
+        // ── FANTASY / TOY MACHINES ──
+
+        // Speak & Spell TI 1978 — red/orange body, VFD teal-green display glow
+        speakspell: {
+            green:   '#00FFCC',
+            bg:      '#CC2200',
+            accent1: '#991100',
+            accent2: '#FFFF00',
+            tickerBg: '#7a0000',
+        },
+
+        // Game Boy DMG-01 1989 — original pea-green LCD, grey body Nintendo
+        gameboy: {
+            green:   '#0F380F',
+            bg:      '#9BBC0F',
+            accent1: '#8BAC0F',
+            accent2: '#0F380F',
+            tickerBg: '#306230',
+            chromeBg:      '#8BAC0F',
+            chromeHeadBg:  '#0F380F',
+            chromeHeadFg:  '#9BBC0F',
+            chromeHoverFg: '#9BBC0F',
+        },
+
+        // Game Boy Color 1998 — teal/purple body, vivid screen
+        gameboycolor: {
+            green:   '#00EEFF',
+            bg:      '#220044',
+            accent1: '#6600AA',
+            accent2: '#FF44AA',
+            tickerBg: '#110022',
+        },
+
+        // Tamagotchi 1996 — egg yellow body, dark LCD on grey-green screen
+        tamagotchi: {
+            green:   '#111111',
+            bg:      '#C8D860',
+            accent1: '#888833',
+            accent2: '#111111',
+            tickerBg: '#99AA33',
+            chromeBg:      '#888833',
+            chromeHeadBg:  '#111111',
+            chromeHeadFg:  '#C8D860',
+            chromeHoverFg: '#FFFFFF',
+        },
+
+        // Simon 1978 — Milton Bradley, primary color quadrants, legendary toy
+        simon: {
+            green:   '#FFFF00',
+            bg:      '#111111',
+            accent1: '#FF0000',
+            accent2: '#00FF00',
+            tickerBg: '#0000AA',
+        },
+
+        // Fisher Price PXL 2000 — plastic camera pixelvision, lo-fi pastel
+        pixelvision: {
+            green:   '#FFAAFF',
+            bg:      '#220033',
+            accent1: '#AA0088',
+            accent2: '#FFFF88',
+            tickerBg: '#110022',
+        },
+
+        // Mattel Electronics Football 1977 — first handheld game, red LEDs on black
+        mattelfootball: {
+            green:   '#FF2200',
+            bg:      '#000000',
+            accent1: '#880000',
+            accent2: '#FF6600',
+            tickerBg: '#1a0000',
+        },
+
+        // Pong 1972 — first arcade, pure white on black, blocky minimal
+        pong: {
+            green:   '#FFFFFF',
+            bg:      '#000000',
+            accent1: '#AAAAAA',
+            accent2: '#FFFFFF',
+            tickerBg: '#111111',
+        },
+
+        // Tiger LCD handheld — green-yellow on dark green, 90s kid energy
+        tigerlcd: {
+            green:   '#AACC00',
+            bg:      '#1a2200',
+            accent1: '#334400',
+            accent2: '#EEFF00',
+            tickerBg: '#0f1500',
+        },
+
+        // ── WINDOWS UNIVERSE ──
+
+        // Windows 3.1 1992 — grey desktop, teal title bar, classic Program Manager
+        win31: {
+            green:   '#000000',
+            bg:      '#008080',
+            accent1: '#000080',
+            accent2: '#FFFFFF',
+            tickerBg: '#005555',
+            chromeBg:      '#C0C0C0',
+            chromeHeadBg:  '#000080',
+            chromeHeadFg:  '#FFFFFF',
+            chromeHoverFg: '#FFFFFF',
+        },
+
+        // Windows 95/98 — iconic grey, navy title bar, exact pixel desktop
+        win95: {
+            green:   '#000000',
+            bg:      '#008080',
+            accent1: '#000080',
+            accent2: '#FFFFFF',
+            tickerBg: '#006666',
+            chromeBg:      '#C0C0C0',
+            chromeHeadBg:  '#000080',
+            chromeHeadFg:  '#FFFFFF',
+            chromeHoverFg: '#FFFF00',
+        },
+
+        // Windows 98 SE — same teal but warmer, classic Active Desktop era
+        win98: {
+            green:   '#FFFFFF',
+            bg:      '#000080',
+            accent1: '#1084D0',
+            accent2: '#FFFF00',
+            tickerBg: '#000055',
+        },
+
+        // Windows 2000 — corporate grey/steel, subtle blue, professional
+        win2000: {
+            green:   '#000000',
+            bg:      '#3A6EA5',
+            accent1: '#245793',
+            accent2: '#FFFFFF',
+            tickerBg: '#1a3d6e',
+            chromeBg:      '#D4D0C8',
+            chromeHeadBg:  '#245793',
+            chromeHeadFg:  '#FFFFFF',
+            chromeHoverFg: '#FFFFFF',
+        },
+
+        // Windows XP Luna Blue 2001 — the most seen OS in history, sky blue taskbar
+        winxp: {
+            green:   '#FFFFFF',
+            bg:      '#1F5499',
+            accent1: '#245FD6',
+            accent2: '#FF6600',
+            tickerBg: '#0f2d66',
+        },
+
+        // Windows XP Bliss — the legendary rolling hills wallpaper, vivid green/blue
+        winxpbliss: {
+            green:   '#FFFFFF',
+            bg:      '#1A8FCC',
+            accent1: '#0055AA',
+            accent2: '#55CC00',
+            tickerBg: '#004488',
+        },
+
+        // Windows XP Silver — Luna Silver theme, elegant grey/blue
+        winxpsilver: {
+            green:   '#000000',
+            bg:      '#7A96DF',
+            accent1: '#5577CC',
+            accent2: '#FFFFFF',
+            tickerBg: '#334499',
+            chromeBg:      '#D8D8D8',
+            chromeHeadBg:  '#5577CC',
+            chromeHeadFg:  '#FFFFFF',
+            chromeHoverFg: '#FFFFFF',
+        },
+
+        // Windows Vista Aero 2007 — glass blue transparency, dark navbar
+        winvista: {
+            green:   '#FFFFFF',
+            bg:      '#082947',
+            accent1: '#1E5799',
+            accent2: '#66AAFF',
+            tickerBg: '#041520',
+        },
+
+        // Windows Vista Midnight — dark Aero variant, deep navy/black glass
+        winvistadark: {
+            green:   '#AAD4FF',
+            bg:      '#05090F',
+            accent1: '#0A1A2F',
+            accent2: '#4488FF',
+            tickerBg: '#020508',
+        },
+    };
+
+    function setColor(theme, el) {
+        const t = themes[theme];
+        document.documentElement.style.setProperty('--green', t.green);
+        document.documentElement.style.setProperty('--bg', t.bg);
+        if (t.accent1) document.documentElement.style.setProperty('--accent1', t.accent1);
+        if (t.accent2) document.documentElement.style.setProperty('--accent2', t.accent2);
+        if (t.tickerBg) document.documentElement.style.setProperty('--ticker-bg', t.tickerBg);
+        // Never use black for dropdowns/popups – use explicit chromeBg or accent1 when text color is black
+        const chromeBgVal = t.chromeBg != null ? t.chromeBg : (t.green === '#000000' ? (t.accent1 || '#333') : t.green);
+        document.documentElement.style.setProperty('--chrome-bg', chromeBgVal);
+        document.documentElement.style.setProperty('--chrome-head-bg', t.chromeHeadBg != null ? t.chromeHeadBg : '#000000');
+        document.documentElement.style.setProperty('--chrome-head-fg', t.chromeHeadFg != null ? t.chromeHeadFg : t.green);
+        document.documentElement.style.setProperty('--chrome-hover-fg', t.chromeHoverFg != null ? t.chromeHoverFg : t.green);
+        // update highlight
+        document.querySelectorAll('#terminalPopup .hl-color.hl').forEach(i => i.classList.remove('hl'));
+        el.classList.add('hl');
+        urlGo('woundheir.com/setup/terminal/color/' + theme);
+    }
+
+    // ── Font ──
+    function setFont(font, el) {
+        document.querySelector('.terminal').style.fontFamily = `'${font}', monospace`;
+        document.querySelectorAll('.popup-item.hl').forEach(i => {
+            if (i.closest('#terminalPopup')) i.classList.remove('hl');
+        });
+        el.classList.add('hl');
+        urlGo('woundheir.com/setup/terminal/font/' + font.replace(' ','-').toLowerCase());
+    }
+
+    // ── Misc toggles (CRT effects) ──
+    const miscState = { scan: true, flicker: false, glitch: false, noise: false, dynoise: false, rgb: false, roll: false, vignette: false, raster: false, hhold: false, afterglow: false, bleed: false, poweroff: false };
+
+    function toggleScanlines(el) {
+        miscState.scan = !miscState.scan;
+        el.innerHTML = (i18n[currentLang].misc_scan || 'Scanlines') + ' &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [ ' + (miscState.scan ? 'ON ' : 'OFF') + ' ]';
+        const term = document.getElementById('terminal');
+        term.classList.toggle('scanlines-on', miscState.scan);
+    }
+    function toggleFlicker(el) {
+        miscState.flicker = !miscState.flicker;
+        el.innerHTML = (i18n[currentLang].misc_flicker || 'CRT Flicker') + ' &nbsp;&nbsp;&nbsp; [ ' + (miscState.flicker ? 'ON ' : 'OFF') + ' ]';
+        const term = document.getElementById('terminal');
+        term.classList.toggle('flicker-on', miscState.flicker);
+    }
+    function toggleGlitch(el) {
+        miscState.glitch = !miscState.glitch;
+        el.innerHTML = 'Glitch &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [ ' + (miscState.glitch ? 'ON ' : 'OFF') + ' ]';
+        document.getElementById('terminal').classList.toggle('glitch-on', miscState.glitch);
+    }
+    function toggleNoise(el) {
+        miscState.noise = !miscState.noise;
+        el.innerHTML = 'Static noise &nbsp;&nbsp; [ ' + (miscState.noise ? 'ON ' : 'OFF') + ' ]';
+        document.getElementById('terminal').classList.toggle('noise-on', miscState.noise);
+    }
+    function toggleDynoise(el) {
+        miscState.dynoise = !miscState.dynoise;
+        el.innerHTML = 'Dynamic noise &nbsp; [ ' + (miscState.dynoise ? 'ON ' : 'OFF') + ' ]';
+        document.getElementById('terminal').classList.toggle('dynoise-on', miscState.dynoise);
+    }
+    function toggleRgb(el) {
+        miscState.rgb = !miscState.rgb;
+        el.innerHTML = 'RGB split &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [ ' + (miscState.rgb ? 'ON ' : 'OFF') + ' ]';
+        document.getElementById('terminal').classList.toggle('rgb-on', miscState.rgb);
+    }
+    function toggleRoll(el) {
+        miscState.roll = !miscState.roll;
+        el.innerHTML = 'Rolling bar &nbsp;&nbsp;&nbsp; [ ' + (miscState.roll ? 'ON ' : 'OFF') + ' ]';
+        document.getElementById('terminal').classList.toggle('roll-on', miscState.roll);
+    }
+    function toggleVignette(el) {
+        miscState.vignette = !miscState.vignette;
+        el.innerHTML = 'Vignette &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [ ' + (miscState.vignette ? 'ON ' : 'OFF') + ' ]';
+        document.getElementById('terminal').classList.toggle('vignette-on', miscState.vignette);
+    }
+    function toggleRaster(el) {
+        miscState.raster = !miscState.raster;
+        el.innerHTML = 'Raster bars &nbsp;&nbsp; [ ' + (miscState.raster ? 'ON ' : 'OFF') + ' ]';
+        document.getElementById('terminal').classList.toggle('raster-on', miscState.raster);
+    }
+    function toggleHhold(el) {
+        miscState.hhold = !miscState.hhold;
+        el.innerHTML = 'Horiz. hold &nbsp;&nbsp; [ ' + (miscState.hhold ? 'ON ' : 'OFF') + ' ]';
+        document.getElementById('terminal').classList.toggle('hhold-on', miscState.hhold);
+    }
+    function toggleAfterglow(el) {
+        miscState.afterglow = !miscState.afterglow;
+        el.innerHTML = 'Afterglow &nbsp;&nbsp;&nbsp;&nbsp; [ ' + (miscState.afterglow ? 'ON ' : 'OFF') + ' ]';
+        document.getElementById('terminal').classList.toggle('afterglow-on', miscState.afterglow);
+    }
+    function toggleBleed(el) {
+        miscState.bleed = !miscState.bleed;
+        el.innerHTML = 'Pixel bleed &nbsp;&nbsp; [ ' + (miscState.bleed ? 'ON ' : 'OFF') + ' ]';
+        document.getElementById('terminal').classList.toggle('bleed-on', miscState.bleed);
+    }
+    function togglePoweroff(el) {
+        miscState.poweroff = !miscState.poweroff;
+        el.innerHTML = 'Power off &nbsp;&nbsp;&nbsp;&nbsp; [ ' + (miscState.poweroff ? 'ON ' : 'OFF') + ' ]';
+        document.getElementById('terminal').classList.toggle('poweroff-on', miscState.poweroff);
+    }
+    function resetTerminalOptions() {
+        const term = document.getElementById('terminal');
+
+        // Reset colors to random from the 6 approved schemes
+        const allowed = ['zxspectrum', 'norton', 'teletext', 'casiofx330', 'win95', 'nokia3310', 'c64'];
+        const rKey = allowed[Math.floor(Math.random() * allowed.length)];
+        const t = themes[rKey];
+        document.documentElement.style.setProperty('--green', t.green);
+        document.documentElement.style.setProperty('--bg', t.bg);
+        if (t.accent1) document.documentElement.style.setProperty('--accent1', t.accent1);
+        if (t.accent2) document.documentElement.style.setProperty('--accent2', t.accent2);
+        if (t.tickerBg) document.documentElement.style.setProperty('--ticker-bg', t.tickerBg);
+        document.documentElement.style.setProperty('--chrome-bg', t.chromeBg != null ? t.chromeBg : t.green);
+        document.documentElement.style.setProperty('--chrome-head-bg', t.chromeHeadBg != null ? t.chromeHeadBg : '#000000');
+        document.documentElement.style.setProperty('--chrome-head-fg', t.chromeHeadFg != null ? t.chromeHeadFg : t.green);
+        document.documentElement.style.setProperty('--chrome-hover-fg', t.chromeHoverFg != null ? t.chromeHoverFg : t.green);
+        document.querySelectorAll('#terminalPopup .hl-color').forEach(item => {
+            item.classList.toggle('hl', item.textContent.trim().startsWith('ZX Spectrum'));
+        });
+
+        // Reset font (Courier New is the default)
+        setFont('Courier New', document.querySelector('#terminalPopup [data-i18n="font_mono"]'));
+
+        // Randomize effects on load — always scanlines + 1-2 random extras
+        const allEffects = ['flicker', 'glitch', 'noise', 'dynoise', 'rgb', 'roll', 'vignette', 'raster', 'hhold', 'afterglow', 'bleed'];
+        const shuffled = allEffects.sort(() => Math.random() - 0.5);
+        const activeExtras = shuffled.slice(0, 1 + Math.floor(Math.random() * 2));
+
+        miscState.scan = true;
+        term.classList.add('scanlines-on');
+        activeExtras.forEach(fx => {
+            miscState[fx] = true;
+            term.classList.add(fx + '-on');
+        });
+
+        // Sync labels for active effects
+        const effectLabels = {
+            scan:      ['opt-scan',      'Scanlines &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [ ON ]'],
+            flicker:   ['opt-flicker',   'CRT Flicker &nbsp;&nbsp;&nbsp; [ ON ]'],
+            glitch:    ['opt-glitch',    'Glitch &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [ ON ]'],
+            noise:     ['opt-noise',     'Static noise &nbsp;&nbsp; [ ON ]'],
+            dynoise:   ['opt-dynoise',   'Dynamic noise &nbsp; [ ON ]'],
+            rgb:       ['opt-rgb',       'RGB split &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [ ON ]'],
+            roll:      ['opt-roll',      'Rolling bar &nbsp;&nbsp;&nbsp; [ ON ]'],
+            vignette:  ['opt-vignette',  'Vignette &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [ ON ]'],
+            raster:    ['opt-raster',    'Raster bars &nbsp;&nbsp; [ ON ]'],
+            hhold:     ['opt-hhold',     'Horiz. hold &nbsp;&nbsp; [ ON ]'],
+            afterglow: ['opt-afterglow', 'Afterglow &nbsp;&nbsp;&nbsp;&nbsp; [ ON ]'],
+            bleed:     ['opt-bleed',     'Pixel bleed &nbsp;&nbsp; [ ON ]'],
+        };
+        Object.entries(effectLabels).forEach(([fx, [id, label]]) => {
+            const el = document.getElementById(id);
+            if (el && miscState[fx]) el.innerHTML = label;
+        });
+
+        urlGo('woundheir.com/setup/terminal/reset');
+    }
+
+    // ── Menu toggle ──
+    let activeMenu = null;
+
+    function toggleMenu(id, e) {
+        e.stopPropagation();
+        closeAllPopups();
+        const el = document.getElementById(id);
+        if (activeMenu && activeMenu !== id) {
+            document.getElementById(activeMenu).classList.remove('active');
+        }
+        el.classList.toggle('active');
+        activeMenu = el.classList.contains('active') ? id : null;
+        if (activeMenu) urlGo('woundheir.com/' + id.replace('m','').toLowerCase());
+    }
+
+    function closeAll() {
+        if (activeMenu) {
+            document.getElementById(activeMenu).classList.remove('active');
+            activeMenu = null;
+        }
+        const langSub = document.getElementById('langSubmenu');
+        if (langSub) langSub.style.display = 'none';
+        if (langSubHideTimer) clearTimeout(langSubHideTimer);
+        langSubHideTimer = null;
+        urlGo('woundheir.com');
+    }
+
+    // ── Popups ──
+    let activePopup = null;
+
+    function openPopup(id, e) {
+        if (e) e.stopPropagation();
+        closeAll();
+        closeAllPopups();
+        document.getElementById(id).classList.add('open');
+        activePopup = id;
+        urlGo('woundheir.com/setup/' + id.replace('Popup','').toLowerCase());
+    }
+
+    function closePopup(id) {
+        document.getElementById(id).classList.remove('open');
+        activePopup = null;
+        urlGo('woundheir.com');
+    }
+
+    function closeAllPopups() {
+        document.querySelectorAll('.popup').forEach(p => p.classList.remove('open'));
+        activePopup = null;
+    }
+
+    // ── URL bar ──
+    function urlGo(url) {
+        document.getElementById('urlText').textContent = 'http://' + url;
+    }
+
+    // ── Misc actions ──
+    function viewSource() {
+        window.open('view-source:' + window.location.href, '_blank');
+        closeAll();
+    }
+
+    function toggleFullscreen() {
+        if (!document.fullscreenElement) document.documentElement.requestFullscreen();
+        else document.exitFullscreen();
+        closeAll();
+    }
+
+    function bookmarkSite() {
+        alert('Press Ctrl+D to bookmark this page');
+        closeAll();
+    }
+
+    // ── Clock ──
+    function updateClock() {
+        const now = new Date();
+        const yr = now.getFullYear();
+        const mo = String(now.getMonth()+1).padStart(2,'0');
+        const dy = String(now.getDate()).padStart(2,'0');
+        const hh = String(now.getHours()).padStart(2,'0');
+        const mm = String(now.getMinutes()).padStart(2,'0');
+        const ss = String(now.getSeconds()).padStart(2,'0');
+
+        let dateStr;
+        if (currentLang === 'en') {
+            dateStr = `${yr}-${mo}-${dy}`;
+        } else {
+            dateStr = `${dy}/${mo}/${yr}`;
+        }
+
+        document.getElementById('clock').textContent = dateStr + '  ' + hh + ':' + mm + ':' + ss;
+    }
+
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    // ── Session timer since visit ──
+    const sessionStart = Date.now();
+    function updateSessionTimer() {
+        const el = document.getElementById('sessionTimer');
+        if (!el) return;
+        const elapsed = Math.floor((Date.now() - sessionStart) / 1000);
+        const mm = String(Math.floor(elapsed / 60)).padStart(2, '0');
+        const ss = String(elapsed % 60).padStart(2, '0');
+        el.textContent = 'session ' + mm + ':' + ss;
+    }
+    setInterval(updateSessionTimer, 1000);
+    updateSessionTimer();
+
+    // ── Random theme + effects on first load ──
+    (function initRandom() {
+        const allowed = ['zxspectrum', 'norton', 'teletext', 'casiofx330', 'win95', 'nokia3310', 'c64'];
+        const rKey = allowed[Math.floor(Math.random() * allowed.length)];
+        const t = themes[rKey];
+        document.documentElement.style.setProperty('--green', t.green);
+        document.documentElement.style.setProperty('--bg', t.bg);
+        if (t.accent1) document.documentElement.style.setProperty('--accent1', t.accent1);
+        if (t.accent2) document.documentElement.style.setProperty('--accent2', t.accent2);
+        if (t.tickerBg) document.documentElement.style.setProperty('--ticker-bg', t.tickerBg);
+        document.documentElement.style.setProperty('--chrome-bg', t.chromeBg ?? t.green);
+        document.documentElement.style.setProperty('--chrome-head-bg', t.chromeHeadBg ?? '#000000');
+        document.documentElement.style.setProperty('--chrome-head-fg', t.chromeHeadFg ?? t.green);
+        document.documentElement.style.setProperty('--chrome-hover-fg', t.chromeHoverFg ?? t.green);
+
+        // Scanlines always on + 1-2 random extras from current valid effects
+        const term = document.getElementById('terminal');
+        const validFx = ['flicker','glitch','noise','dynoise','rgb','roll','vignette','raster','hhold','afterglow','bleed'];
+        const shuffled = validFx.sort(() => Math.random() - 0.5);
+        const extras = shuffled.slice(0, 1 + Math.floor(Math.random() * 2));
+        miscState.scan = true;
+        term.classList.add('scanlines-on');
+        extras.forEach(fx => {
+            miscState[fx] = true;
+            term.classList.add(fx + '-on');
+        });
+        // Sync popup labels
+        const labels = {
+            flicker:   ['opt-flicker',   'CRT Flicker &nbsp;&nbsp;&nbsp; [ ON ]'],
+            glitch:    ['opt-glitch',    'Glitch &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [ ON ]'],
+            noise:     ['opt-noise',     'Static noise &nbsp;&nbsp; [ ON ]'],
+            dynoise:   ['opt-dynoise',   'Dynamic noise &nbsp; [ ON ]'],
+            rgb:       ['opt-rgb',       'RGB split &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [ ON ]'],
+            roll:      ['opt-roll',      'Rolling bar &nbsp;&nbsp;&nbsp; [ ON ]'],
+            vignette:  ['opt-vignette',  'Vignette &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [ ON ]'],
+            raster:    ['opt-raster',    'Raster bars &nbsp;&nbsp; [ ON ]'],
+            hhold:     ['opt-hhold',     'Horiz. hold &nbsp;&nbsp; [ ON ]'],
+            afterglow: ['opt-afterglow', 'Afterglow &nbsp;&nbsp;&nbsp;&nbsp; [ ON ]'],
+            bleed:     ['opt-bleed',     'Pixel bleed &nbsp;&nbsp; [ ON ]'],
+        };
+        extras.forEach(fx => {
+            const entry = labels[fx];
+            if (entry) {
+                const el = document.getElementById(entry[0]);
+                if (el) el.innerHTML = entry[1];
+            }
+        });
+    })();
+
+    // ── Boot → Grid ──
+    (function runTerminal() {
+        const bootLines = document.getElementById('bootLines');
+        const grid      = document.getElementById('portfolioGrid');
+
+        function rnd(min, max) { return min + Math.random() * (max - min); }
+        function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+        // ── BEEP ──
+        function playError() {
+            try {
+                const c = new (window.AudioContext || window.webkitAudioContext)();
+                const t = c.currentTime;
+                const o = c.createOscillator();
+                const g = c.createGain();
+                o.type = 'square';
+                o.frequency.value = 440;
+                g.gain.setValueAtTime(0.2, t);
+                g.gain.linearRampToValueAtTime(0, t + 0.12);
+                o.connect(g); g.connect(c.destination);
+                o.start(t); o.stop(t + 0.13);
+            } catch(e) {}
+        }
+
+        async function typeLine(text, statusText, statusClass) {
+            const line = document.createElement('div');
+            line.className = 'boot-line';
+            const span = document.createElement('span');
+            span.className = 'c';
+            span.style.display = 'inline';
+            line.appendChild(span);
+            bootLines.appendChild(line);
+            for (let i = 0; i < text.length; i++) {
+                span.textContent += text[i];
+                await delay(rnd(30, 90));
+            }
+            if (statusText) {
+                const s = document.createElement('span');
+                s.className = statusClass || '';
+                s.textContent = statusText;
+                line.appendChild(s);
+            }
+            await delay(rnd(150, 350));
+        }
+
+        (async () => {
+            await typeLine('loading artworks......... ', '[OK]', 'boot-status-ok');
+            await typeLine('loading 2D video games... ', '[OK]', 'boot-status-ok');
+            await typeLine('loading music............ ', '[OK]', 'boot-status-ok');
+            playError();
+            await typeLine('loading............. ', '[CORRUPTED]', 'boot-status-corrupted');
+            await delay(300);
+            await typeLine('opening...');
+            await delay(500);
+            bootLines.style.transition = 'opacity 0.6s';
+            bootLines.style.opacity = '0';
+            await delay(650);
+            bootLines.style.display = 'none';
+            grid.style.display = 'grid';
+        })();
+
+        document.addEventListener('keydown', function(e) {
+            if (activePopup) return;
+            if (e.key === 'Escape') { closeAll(); closeAllPopups(); return; }
+            if (e.ctrlKey && e.key === 'r') { e.preventDefault(); location.reload(); return; }
+            if (e.key === 'F11') { e.preventDefault(); toggleFullscreen(); return; }
+        });
+
+    })();
+
+    // Prevent clicks inside popups from closing them
+    document.querySelectorAll('.popup').forEach(p => {
+        p.addEventListener('click', e => e.stopPropagation());
+    });
+
+    document.addEventListener('click', () => { closeAll(); closeAllPopups(); });
+</script>
+
+</body>
+</html>
