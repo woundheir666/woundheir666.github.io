@@ -1,1752 +1,1438 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WOUNDHEIR</title>
-    <style>
-        /* Courier New is the default system monospace */
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WOUNDHEIR</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+:root {
+  --green:#00FFFF; --bg:#000000; --accent1:#FF00FF; --accent2:#FFFF00;
+  --ticker-bg:#0000CC; --chrome-bg:var(--green); --chrome-head-bg:#000000;
+  --chrome-head-fg:var(--green); --chrome-hover-fg:var(--green); --bar-height:30px;
+}
+body { background:#000; display:flex; align-items:center; justify-content:center; min-height:100vh; font-family:'Courier New',monospace; }
+.terminal { width:96vw; max-width:1200px; min-height:92vh; background:var(--bg); color:var(--green); font-size:23px; line-height:1.35; text-shadow:0 0 3px var(--green); display:flex; flex-direction:column; position:relative; overflow:hidden; }
+.terminal.scanlines-on .content::before { content:""; position:absolute; inset:0; pointer-events:none; background-image:repeating-linear-gradient(to bottom,rgba(0,0,0,.35) 0px,rgba(0,0,0,.35) 1px,rgba(0,0,0,0) 1.5px,rgba(0,0,0,0) 3px); mix-blend-mode:multiply; z-index:2; }
+.terminal.scanlines-on .url-bar::before,.terminal.scanlines-on .ticker-bar::before { content:""; position:absolute; inset:0; pointer-events:none; background-image:repeating-linear-gradient(to bottom,rgba(0,0,0,.35) 0px,rgba(0,0,0,.35) 1px,rgba(0,0,0,0) 1.5px,rgba(0,0,0,0) 3px); mix-blend-mode:multiply; z-index:1; }
+.terminal.flicker-on::before { content:""; position:absolute; inset:0; pointer-events:none; z-index:998; animation:crt-flicker .12s infinite; }
+@keyframes crt-flicker { 0%{opacity:.88;background:rgba(0,0,0,.08)} 25%{opacity:.95;background:rgba(0,0,0,.03)} 50%{opacity:1;background:transparent} 75%{opacity:.92;background:rgba(0,0,0,.05)} 100%{opacity:.87;background:rgba(0,0,0,.09)} }
+.terminal.glitch-on { animation:glitch 6s infinite; }
+@keyframes glitch { 0%,96%,100%{transform:none;clip-path:none} 96.5%{transform:translateX(-3px);clip-path:inset(15% 0 70% 0)} 97%{transform:translateX(4px);clip-path:inset(55% 0 20% 0)} 97.5%{transform:translateX(-2px);clip-path:inset(80% 0 5% 0)} 98%{transform:translateX(2px);clip-path:none} }
+.terminal.rgb-on .content,.terminal.rgb-on .boot-screen,.terminal.rgb-on .menu-bar,.terminal.rgb-on .ticker-bar,.terminal.rgb-on .url-bar { text-shadow:-2px 0 rgba(255,0,0,.5),2px 0 rgba(0,255,255,.5),0 0 3px var(--green); }
+.terminal.bleed-on .content,.terminal.bleed-on .boot-screen,.terminal.bleed-on .menu-bar,.terminal.bleed-on .url-bar { filter:blur(.3px) contrast(1.4); letter-spacing:.5px; }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-
-        :root {
-            --green: #00FFFF;
-            --green-dim: #00cccc;
-            --bg: #000000;
-            --accent1: #FF00FF;
-            --accent2: #FFFF00;
-            --ticker-bg: #0000CC;
-            --chrome-bg: var(--green);
-            --chrome-head-bg: #000000;
-            --chrome-head-fg: var(--green);
-            --chrome-hover-fg: var(--green);
-            --bar-height: 30px;
-        }
-
-        body {
-            background: #000000;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            font-family: 'Courier New', monospace;
-        }
-
-        /* ── TERMINAL BOX ── */
-        .terminal {
-            width: 96vw;
-            max-width: 1200px;
-            min-height: 92vh;
-            background: var(--bg);
-            color: var(--green);
-            font-size: 23px;
-            line-height: 1.35;
-            text-shadow: 0 0 3px var(--green);
-            display: flex;
-            flex-direction: column;
-            position: relative;
-            overflow: hidden;
-        }
-
-        /* CRT scanlines overlay (content area) */
-        .terminal.scanlines-on .content::before {
-            content: "";
-            position: absolute;
-            inset: 0;
-            pointer-events: none;
-            background-image: repeating-linear-gradient(
-                to bottom,
-                rgba(0, 0, 0, 0.35) 0px,
-                rgba(0, 0, 0, 0.35) 1px,
-                rgba(0, 0, 0, 0.0) 1.5px,
-                rgba(0, 0, 0, 0.0) 3px
-            );
-            mix-blend-mode: multiply;
-            z-index: 2;
-        }
-
-        /* CRT scanlines overlay on URL/footer bar */
-        .terminal.scanlines-on .url-bar::before {
-            content: "";
-            position: absolute;
-            inset: 0;
-            pointer-events: none;
-            background-image: repeating-linear-gradient(
-                to bottom,
-                rgba(0, 0, 0, 0.35) 0px,
-                rgba(0, 0, 0, 0.35) 1px,
-                rgba(0, 0, 0, 0.0) 1.5px,
-                rgba(0, 0, 0, 0.0) 3px
-            );
-            mix-blend-mode: multiply;
-            z-index: 1;
-        }
-
-        /* CRT scanlines on ticker bar */
-        .terminal.scanlines-on .ticker-bar::before {
-            content: "";
-            position: absolute;
-            inset: 0;
-            pointer-events: none;
-            background-image: repeating-linear-gradient(
-                to bottom,
-                rgba(0, 0, 0, 0.35) 0px,
-                rgba(0, 0, 0, 0.35) 1px,
-                rgba(0, 0, 0, 0.0) 1.5px,
-                rgba(0, 0, 0, 0.0) 3px
-            );
-            mix-blend-mode: multiply;
-            z-index: 1;
-        }
-
-        /* CRT flicker effect (subtle but visible) */
-        .terminal.flicker-on {
-            animation: crt-flicker 0.10s infinite;
-        }
-
-        @keyframes crt-flicker {
-            0%   { opacity: 0.95; filter: brightness(0.97); }
-            50%  { opacity: 1.00; filter: brightness(1.03); }
-            100% { opacity: 0.96; filter: brightness(0.985); }
-        }
-
-        /* Glitch effect */
-        /* Glitch — pixel-shift corruption, no hue rotate, just digital breakup */
-        .terminal.glitch-on {
-            animation: glitch 6s infinite;
-        }
-        @keyframes glitch {
-            0%, 96%, 100% { transform: none; clip-path: none; }
-            96.5% { transform: translateX(-3px); clip-path: inset(15% 0 70% 0); }
-            97%   { transform: translateX(4px);  clip-path: inset(55% 0 20% 0); }
-            97.5% { transform: translateX(-2px); clip-path: inset(80% 0 5% 0); }
-            98%   { transform: translateX(2px);  clip-path: none; }
-            98.5% { transform: none; }
-        }
-
-        /* Dynamic noise — animated scanline interference, like a dying CRT */
-        .terminal.dynoise-on::before {
-            content: "";
-            position: absolute;
-            inset: 0;
-            pointer-events: none;
-            z-index: 998;
-            background: repeating-linear-gradient(
-                0deg,
-                transparent,
-                transparent 1px,
-                rgba(128,128,128,0.03) 1px,
-                rgba(128,128,128,0.03) 3px
-            );
-            animation: dynoise-drift 0.2s steps(3) infinite;
-        }
-        @keyframes dynoise-drift {
-            0%   { background-position: 0 0;    opacity: 0.5; }
-            33%  { background-position: 0 -6px; opacity: 0.6; }
-            66%  { background-position: 0 3px;  opacity: 0.5; }
-            100% { background-position: 0 0;    opacity: 0.6; }
-        }
-
-        /* RGB split / chromatic aberration */
-        .terminal.rgb-on .content,
-        .terminal.rgb-on .boot-screen,
-        .terminal.rgb-on .menu-bar,
-        .terminal.rgb-on .ticker-bar,
-        .terminal.rgb-on .url-bar {
-            text-shadow:
-                -2px 0 rgba(255,0,0,0.5),
-                2px 0 rgba(0,255,255,0.5),
-                0 0 3px var(--green);
-        }
-
-        /* Horizontal raster bars — coloured scanlines like a PETSCII demo */
-        .terminal.raster-on .content::after,
-        .terminal.raster-on .boot-screen::after {
-            content: "";
-            position: absolute;
-            inset: 0;
-            pointer-events: none;
-            z-index: 10;
-            background: repeating-linear-gradient(
-                to bottom,
-                rgba(var(--green-rgb, 0,255,100), 0.03) 0px,
-                rgba(var(--green-rgb, 0,255,100), 0.03) 2px,
-                transparent 2px,
-                transparent 6px
-            );
-            animation: raster-shift 0.5s steps(3) infinite;
-        }
-        @keyframes raster-shift {
-            0%   { background-position: 0 0; }
-            100% { background-position: 0 6px; }
-        }
-
-        /* Pixel bleed — slight horizontal smear on text, old LCD ghosting */
-        .terminal.bleed-on .content,
-        .terminal.bleed-on .boot-screen,
-        .terminal.bleed-on .menu-bar,
-        .terminal.bleed-on .url-bar {
-            filter: blur(0.3px) contrast(1.4);
-            letter-spacing: 0.5px;
-        }
-
-        /* ── MENU BAR ── */
-        .menu-bar {
-            display: flex;
-            align-items: center;
-            height: var(--bar-height);
-            background: var(--accent1);
-            color: #000000;
-            text-shadow: none;
-            font-size: 21px;
-            padding: 0 6px;
-            position: relative;
-            z-index: 100;
-            user-select: none;
-            flex-shrink: 0;
-        }
-
-        .menu-items {
-            display: flex;
-            flex: 1;
-            min-width: 0;
-        }
-
-        .menu-item {
-            padding: 0 16px 0 6px;
-            cursor: pointer;
-            position: relative;
-        }
-
-        .menu-item u { text-decoration: underline; }
-
-        /* Selected menu title: same blue as Terminal options header so it stays visible (e.g. Win95) */
-        .menu-item.active {
-            background: var(--chrome-head-bg, #000080);
-            color: var(--chrome-head-fg, #FFFFFF);
-            text-shadow: none;
-        }
+/* VHS TRACKING */
+.terminal.vhs-on::after { content:""; position:absolute; inset:0; pointer-events:none; z-index:997; animation:vhs-track 4s linear infinite; background:repeating-linear-gradient(to bottom,transparent 0px,transparent 60px,rgba(255,255,255,.03) 60px,rgba(255,255,255,.03) 62px); }
+@keyframes vhs-track { 0%{background-position:0 0} 100%{background-position:0 200px} }
+.terminal.vhs-on .content,.terminal.vhs-on .boot-screen { animation:vhs-shift 8s steps(1) infinite; }
+@keyframes vhs-shift { 0%,90%{transform:none} 91%{transform:translateX(-3px) skewX(-.5deg)} 92%{transform:translateX(2px) skewX(.3deg)} 93%{transform:none} 96%{transform:translateX(-1px)} 97%{transform:none} }
 
 
-        /* ── DROPDOWN ── */
-        .dropdown {
-            display: none;
-            position: absolute;
-            top: 100%;
-            left: 0;
-            background: var(--chrome-bg, var(--accent1));
-            color: #000000;
-            text-shadow: none;
-            min-width: 220px;
-            z-index: 500;
-            border: 2px solid #000000;
-            font-size: 21px;
-            overflow: visible; /* allow Open and Music submenus to show */
-        }
+/* MENU */
+.menu-bar { display:flex; align-items:center; height:var(--bar-height); background:var(--accent1); color:#000; text-shadow:none; font-size:21px; padding:0 6px; position:relative; z-index:100; user-select:none; flex-shrink:0; }
+.menu-items { display:flex; flex:1; min-width:0; }
+.menu-item { padding:0 16px 0 6px; cursor:pointer; position:relative; }
+.menu-item u { text-decoration:underline; }
+.menu-item.active { background:var(--chrome-head-bg,#000080); color:var(--chrome-head-fg,#fff); text-shadow:none; }
+.dropdown { display:none; position:absolute; top:100%; left:0; background:var(--chrome-bg,var(--accent1)); color:#000; text-shadow:none; min-width:220px; z-index:500; border:2px solid var(--chrome-head-bg,#000); font-size:21px; overflow:visible; }
+.menu-item.active .dropdown { display:block; }
+.terminal.scanlines-on .menu-item.active .dropdown::before { content:""; position:absolute; inset:0; pointer-events:none; background-image:repeating-linear-gradient(to bottom,rgba(0,0,0,.1) 0px,rgba(0,0,0,.1) 1px,rgba(0,0,0,0) 1.5px,rgba(0,0,0,0) 3px); mix-blend-mode:multiply; }
+.dd-item { padding:2px 14px 2px 10px; cursor:pointer; display:flex; justify-content:space-between; white-space:nowrap; color:#000; }
+.dd-item:hover,.dd-item.hl { background:var(--chrome-head-bg,#000080); color:var(--chrome-head-fg,#fff); text-shadow:none; }
+.dd-sep { border-top:1px solid #000; margin:2px 0; opacity:.4; }
+.has-sub { position:relative; }
+.submenu { display:none; position:absolute; top:0; left:calc(100% - 1px); background:var(--chrome-bg,var(--accent1)); color:#000; text-shadow:none; min-width:160px; border:2px solid var(--chrome-head-bg,#000); z-index:700; font-size:21px; }
+.has-sub:hover .submenu,.submenu:hover { display:block; }
+.sub-item { padding:2px 14px 2px 10px; cursor:pointer; white-space:nowrap; color:#000; }
+.sub-item:hover,.sub-item.active-lang { background:var(--chrome-head-bg,#000080); color:var(--chrome-head-fg,#fff); text-shadow:none; }
+.sub-item.has-sub { display:flex; justify-content:space-between; }
 
-        .menu-item.active .dropdown { display: block; }
+/* CONTENT */
+.content { flex:1; padding:10px 16px; position:relative; overflow-y:auto; }
+/* Scrollbars — hidden */
+::-webkit-scrollbar { display:none; }
+* { scrollbar-width:none; }
+.lnk { color:var(--green); text-decoration:underline; cursor:pointer; }
+.lnk:hover { background:var(--green); color:#000; text-shadow:none; }
 
-        /* Light scanlines on dropdowns so menu text stays readable */
-        .terminal.scanlines-on .menu-item.active .dropdown::before {
-            content: "";
-            position: absolute;
-            inset: 0;
-            pointer-events: none;
-            background-image: repeating-linear-gradient(
-                to bottom,
-                rgba(0, 0, 0, 0.10) 0px,
-                rgba(0, 0, 0, 0.10) 1px,
-                rgba(0, 0, 0, 0.0) 1.5px,
-                rgba(0, 0, 0, 0.0) 3px
-            );
-            mix-blend-mode: multiply;
-        }
+/* POPUP */
+.popup { display:none; position:absolute; top:10px; left:50%; background:var(--chrome-bg,var(--accent1)); color:#000; text-shadow:none; min-width:240px; max-height:75vh; overflow-y:auto; overflow-x:hidden; z-index:300; border:2px solid var(--chrome-head-bg,#000); font-size:21px; }
+.popup.open { display:block; }
+.popup-head { background:var(--chrome-head-bg,#000); color:var(--chrome-head-fg,var(--green)); text-shadow:0 0 3px var(--chrome-head-fg); padding:2px 10px; font-size:21px; }
+.popup-item { padding:2px 14px 2px 10px; cursor:pointer; display:flex; justify-content:space-between; white-space:nowrap; color:#000; }
+.popup-item:hover,.popup-item.hl { background:var(--popup-hover-bg,#000); color:var(--popup-hover-fg,var(--green)); text-shadow:0 0 3px var(--popup-hover-fg,var(--green)); }
+.popup-sep { border-top:1px solid #000; margin:2px 6px; opacity:.4; }
+.popup-item.effect-row { display:flex; justify-content:space-between; align-items:center; gap:12px; }
+.popup-item.effect-row .effect-value { min-width:5em; text-align:right; }
 
-        .dd-item {
-            padding: 2px 14px 2px 10px;
-            cursor: pointer;
-            display: flex;
-            justify-content: space-between;
-            white-space: nowrap;
-            color: #000000;
-        }
+/* TICKER */
+.ticker-bar { background:var(--ticker-bg); color:var(--ticker-fg,var(--green)); text-shadow:0 0 2px var(--ticker-fg,var(--green)); font-size:21px; height:var(--bar-height); padding:0 6px; flex-shrink:0; overflow:hidden; position:relative; display:flex; align-items:center; }
+.ticker-track { display:flex; width:max-content; will-change:transform; }
+.ticker-text { white-space:nowrap; padding-right:0; }
+.ticker-malware { color:var(--accent2,var(--green)); font-weight:bold; text-shadow:0 0 4px var(--accent2,var(--green)); }
 
-        .dd-item:hover, .dd-item.hl {
-            background: var(--chrome-head-bg, #000080);
-            color: var(--chrome-head-fg, #FFFFFF);
-            text-shadow: none;
-        }
+/* URL BAR */
+.url-bar { background:var(--accent1); color:#000; text-shadow:none; font-size:20px; padding:2px 10px; white-space:nowrap; overflow:hidden; flex-shrink:0; display:flex; align-items:center; justify-content:space-between; position:relative; }
+.url-session { font-size:18px; margin-left:auto; padding-left:12px; }
 
-        .dd-sep {
-            border-top: 1px solid #000000;
-            margin: 2px 0;
-            opacity: 0.4;
-        }
+/* BOOT */
+.boot-screen { position:absolute; inset:0; padding:10px 16px; overflow-y:auto; z-index:1; }
+.boot-line { display:block; min-height:1.35em; }
+.boot-line .c { display:inline; color:var(--green); }
+.boot-prompt-cursor { display:inline; color:var(--green); animation:boot-blink 1s step-end infinite; }
+@keyframes boot-blink { 0%,50%{opacity:1} 50.01%,100%{opacity:0} }
+.boot-status-ok { color:inherit; }
+.boot-status-corrupted { background:var(--green); color:var(--bg); padding:0 4px; text-shadow:none; font-weight:bold; letter-spacing:2px; }
 
-        /* Language submenu */
-        .has-sub { position: relative; }
+/* PORTFOLIO GRID */
+#portfolioGrid { display:none; grid-template-columns:repeat(4,1fr); grid-template-rows:repeat(2,1fr); gap:0; position:absolute; inset:0; }
+.p-tile { border:1px solid var(--bg); display:flex; flex-direction:column; cursor:pointer; text-decoration:none; overflow:hidden; position:relative; }
+.p-gif { flex:1; background:var(--bg); display:flex; align-items:center; justify-content:center; overflow:hidden; position:relative; }
+.p-gif img,.p-gif video { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+.p-label { flex-shrink:0; background:var(--label-bg,var(--green)); color:var(--label-fg,#000); text-align:center; font-size:18px; padding:4px 0; text-shadow:none; letter-spacing:2px; }
+.p-tile:hover .p-label { color:var(--chrome-head-fg,var(--green)); background:var(--chrome-head-bg,#000080); }
 
-        .submenu {
-            display: none;
-            position: absolute;
-            top: 0;
-            left: calc(100% - 1px);
-            background: var(--chrome-bg, var(--accent1));
-            color: #000000;
-            text-shadow: none;
-            min-width: 160px;
-            border: 2px solid #000000;
-            z-index: 700;
-            font-size: 21px;
-        }
+/* ABOUT */
+.about-page { position:absolute; inset:0; z-index:1000; background:var(--bg); color:var(--green); text-shadow:0 0 3px var(--green); padding:16px 20px; overflow:hidden; font-size:20px; line-height:1.4; display:none; }
+.about-page.open { display:block; }
+.about-shell { height:100%; display:flex; flex-direction:column; gap:12px; }
+.about-body { flex:1; min-height:0; border:1px solid var(--green); padding:14px; overflow:auto; display:flex; align-items:center; justify-content:center; }
+.about-artist { display:flex; flex-direction:column; align-items:center; justify-content:center; width:100%; gap:14px; }
+.about-portrait-wrap { width:100%; display:flex; justify-content:center; align-items:center; overflow:visible; }
+.about-portrait { margin:0 auto; padding-top:2px; width:max-content; font-family:'Courier New',monospace; font-size:6.5px; line-height:.95; letter-spacing:0; white-space:pre; text-align:left; display:block; }
+.about-artist-bio { width:100%; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; text-align:center; gap:6px; }
+.about-artist-bio p { margin:0; max-width:none; white-space:nowrap; }
+.about-close { cursor:pointer; display:inline-block; padding:4px 12px; border:1px solid var(--green); align-self:flex-start; }
+.about-close:hover { background:var(--green); color:var(--bg); text-shadow:none; }
 
-        .has-sub:hover .submenu,
-        .submenu:hover { display: block; }
+/* HELP GUIDE PAGES */
+.help-guide-page { position:absolute; inset:0; z-index:1000; background:var(--bg); color:var(--green); text-shadow:0 0 3px var(--green); padding:16px 20px; overflow:hidden; font-size:20px; line-height:1.4; display:none; }
+.help-guide-page.open { display:block; }
+.help-guide-shell { height:100%; display:flex; flex-direction:column; gap:12px; }
+.help-guide-title { font-size:18px; letter-spacing:2px; border:1px solid var(--green); padding:5px 10px; width:fit-content; }
+.help-guide-body { flex:1; min-height:0; border:1px solid var(--green); padding:14px; overflow:auto; }
+.help-guide-typed { font-family:'Courier New',monospace; font-size:18px; line-height:1.35; }
+.help-guide-typed .boot-line { min-height:1.35em; }
 
-        .sub-item {
-            padding: 2px 14px 2px 10px;
-            cursor: pointer;
-            white-space: nowrap;
-            color: #000000;
-        }
+/* ═══ UTILITIES (Image converters: Teletext, ASCII) ═══ */
+.utility-overlay { position:absolute; inset:0; z-index:1000; background:var(--bg); color:var(--green); text-shadow:0 0 3px var(--green); display:none; flex-direction:column; overflow:hidden; font-family:'Courier New',monospace; }
+.utility-overlay.open { display:flex; }
+.util-titlebar { background:var(--chrome-head-bg,#000); color:var(--chrome-head-fg,var(--green)); text-shadow:0 0 4px var(--chrome-head-fg,var(--green)); font-size:18px; padding:3px 10px; display:flex; justify-content:space-between; align-items:center; flex-shrink:0; user-select:none; letter-spacing:2px; }
+.util-close-btn { cursor:pointer; padding:1px 8px; border:1px solid var(--chrome-head-fg,var(--green)); font-size:15px; }
+.util-close-btn:hover { background:var(--chrome-head-fg,var(--green)); color:var(--chrome-head-bg,#000); text-shadow:none; }
+.util-toolbar { background:var(--chrome-bg,var(--accent1)); color:#000; text-shadow:none; padding:4px 10px; font-size:16px; display:flex; gap:10px; align-items:center; flex-wrap:wrap; flex-shrink:0; border-bottom:2px solid var(--chrome-head-bg,#000); }
+.util-toolbar label { color:#000; font-size:14px; letter-spacing:1px; }
+.util-toolbar select { background:var(--bg); color:var(--green); border:1px solid var(--green); font-family:'Courier New',monospace; font-size:13px; padding:2px 6px; cursor:pointer; outline:none; }
+.util-toolbar input[type=range] { accent-color:var(--green); width:90px; cursor:pointer; }
+.util-btn { font-family:'Courier New',monospace; font-size:13px; font-weight:bold; letter-spacing:1px; padding:3px 12px; border:none; cursor:pointer; }
+.util-btn:hover { opacity:.8; }
+.util-btn-dl { background:var(--bg); color:var(--accent2,#ff0); border:1px solid var(--accent2,#ff0); }
+.util-btn-copy { background:var(--bg); color:var(--green); border:1px solid var(--green); }
+.util-spacer { flex:1; }
+.util-dropzone { border:2px dashed var(--green); color:var(--green); text-align:center; padding:12px; cursor:pointer; font-size:13px; letter-spacing:2px; transition:background .2s; margin:8px 12px; flex-shrink:0; }
+.util-workspace { flex:1; display:flex; overflow:hidden; position:relative; }
+.util-statusbar { background:var(--chrome-bg,var(--accent1)); color:#000; text-shadow:none; font-size:13px; padding:2px 10px; flex-shrink:0; border-top:2px solid var(--chrome-head-bg,#000); letter-spacing:1px; min-height:20px; }
 
-        .sub-item:hover, .sub-item.active-lang {
-            background: var(--chrome-head-bg, #000080);
-            color: var(--chrome-head-fg, #FFFFFF);
-            text-shadow: none;
-        }
+/* Teletext converter */
+#utilTeletext .util-dropzone.tt-dropzone-initial { flex:1; min-height:220px; display:flex; align-items:center; justify-content:center; margin:12px 24px; font-size:15px; }
+#utilTeletext .util-workspace { flex:1; display:flex; align-items:center; justify-content:center; overflow:auto; padding:16px; }
+#utilTeletext .util-workspace.tt-has-result { cursor:copy; }
+#utilTeletext .util-workspace canvas { display:block; image-rendering:pixelated; border:2px solid var(--green); }
+.tt-placeholder { color:#333; font-size:22px; letter-spacing:4px; margin:auto; text-shadow:none; text-align:center; }
+.tt-placeholder small { display:block; font-size:12px; margin-top:8px; color:#222; }
+.tt-dot-row { display:flex; gap:4px; align-items:center; }
+.tt-theme-dot { width:22px; height:22px; border:2px solid #555; cursor:pointer; transition:transform .1s; display:inline-block; }
+.tt-theme-dot.active { border:2px solid #fff; transform:scale(1.2); outline:1px solid #fff; }
+.tt-bg-dot { width:22px; height:22px; border:2px solid #555; cursor:pointer; display:inline-block; }
+.tt-bg-dot.active { border:2px solid #fff; outline:1px solid #fff; }
 
-        .sub-item.has-sub {
-            position: relative;
-            display: flex;
-            justify-content: space-between;
-        }
-        .sub-item.has-sub .submenu { z-index: 701; }
+/* ASCII art generator */
+#utilAscii .util-dropzone.ascii-dropzone-initial { flex:1; min-height:220px; display:flex; align-items:center; justify-content:center; margin:12px 24px; font-size:15px; }
+#utilAscii .util-workspace { flex:1; display:flex; align-items:center; justify-content:center; overflow:auto; padding:16px; }
+#utilAscii .util-workspace.ascii-has-result { cursor:copy; }
+.ascii-output-wrap { display:flex; align-items:center; justify-content:center; min-width:min-content; min-height:min-content; }
+#asciiOutput { font-family:'Courier New',monospace; font-size:7px; line-height:1.1; white-space:pre; color:var(--green); text-shadow:0 0 1px var(--green); display:block; letter-spacing:.5px; }
 
-        /* ── CONTENT AREA ── */
-        .content {
-            flex: 1;
-            padding: 10px 16px;
-            position: relative;
-            overflow-y: auto;
-        }
 
-        /* Windows 95–style scrollbar (theme palette); no up/down buttons, thumb only */
-        .content::-webkit-scrollbar,
-        .popup::-webkit-scrollbar {
-            width: 22px;
-        }
-        .content::-webkit-scrollbar-track,
-        .popup::-webkit-scrollbar-track {
-            background: var(--scroll-track, var(--chrome-bg, #c0c0c0));
-        }
-        .content::-webkit-scrollbar-thumb,
-        .popup::-webkit-scrollbar-thumb {
-            background: var(--scroll-thumb, var(--chrome-bg, #c0c0c0));
-            border: none;
-            border-radius: 0;
-        }
-        .content::-webkit-scrollbar-thumb:hover,
-        .popup::-webkit-scrollbar-thumb:hover {
-            background: var(--scroll-thumb-hover, var(--scroll-thumb, var(--chrome-bg)));
-        }
-        .content::-webkit-scrollbar-button,
-        .popup::-webkit-scrollbar-button {
-            height: 0;
-            width: 0;
-            display: none;
-        }
-        .content::-webkit-scrollbar-corner,
-        .popup::-webkit-scrollbar-corner {
-            background: var(--scroll-track, var(--chrome-bg, #c0c0c0));
-        }
 
-        .c {
-            display: block;
-            color: var(--green);
-        }
+/* CUSTOM CURSOR */
+body { cursor: none !important; }
+* { cursor: none !important; }
+#customCursor {
+  position: fixed;
+  top: 0; left: 0;
+  width: 20px; height: 20px;
+  pointer-events: none;
+  z-index: 99999;
+  transform: translate(-2px, -2px);
+  transition: opacity 0.15s;
+  filter: drop-shadow(0 0 3px var(--green));
+}
 
-        .inv {
-            background: var(--accent2);
-            color: #000000;
-            text-shadow: none;
-        }
+/* Placeholder color */
+input::placeholder { color:var(--green); opacity:.5; }
 
-        .lnk {
-            color: var(--green);
-            text-decoration: underline;
-            cursor: pointer;
-        }
-        .lnk:hover {
-            background: var(--green);
-            color: #000000;
-            text-shadow: none;
-        }
+/* Remove number input spinners */
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button { -webkit-appearance:none; margin:0; }
+input[type=number] { -moz-appearance:textfield; appearance:textfield; }
 
-        /* ── FLOATING POPUP (Setup etc) ── */
-        .popup {
-            display: none;
-            position: absolute;
-            top: 10px;
-            left: 50%;
-            background: var(--chrome-bg, var(--accent1));
-            color: #000000;
-            text-shadow: none;
-            min-width: 240px;
-            max-height: 75vh;
-            overflow-y: auto;
-            overflow-x: hidden;
-            z-index: 300;
-            border: 2px solid #000000;
-            font-size: 21px;
-        }
-
-        .popup.open { display: block; }
-        #terminalPopup { overflow-x: visible; }
-
-        .popup-head {
-            background: var(--chrome-head-bg, #000000);
-            color: var(--chrome-head-fg, var(--green));
-            text-shadow: 0 0 3px var(--chrome-head-fg);
-            padding: 2px 10px;
-            font-size: 21px;
-        }
-
-        .popup-item {
-            padding: 2px 14px 2px 10px;
-            cursor: pointer;
-            display: flex;
-            justify-content: space-between;
-            white-space: nowrap;
-            color: #000000;
-        }
-
-        .popup-item:hover, .popup-item.hl {
-            background: var(--popup-hover-bg, #000000);
-            color: var(--popup-hover-fg, var(--green));
-            text-shadow: 0 0 3px var(--popup-hover-fg, var(--green));
-        }
-
-        .popup-sep {
-            border-top: 1px solid #000000;
-            margin: 2px 6px;
-            opacity: 0.4;
-        }
-
-        .popup-item.effect-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 12px;
-        }
-        .popup-item.effect-row .effect-value {
-            min-width: 5em;
-            text-align: right;
-        }
-
-        /* ── TICKER BAR ── */
-        .ticker-bar {
-            background: var(--ticker-bg);
-            color: var(--ticker-fg, var(--green));
-            text-shadow: 0 0 2px var(--ticker-fg, var(--green));
-            font-size: 21px;
-            height: var(--bar-height);
-            padding: 0 6px;
-            flex-shrink: 0;
-            overflow: hidden;
-            position: relative;
-            display: flex;
-            align-items: center;
-        }
-        .ticker-track {
-            display: flex;
-            width: max-content;
-            will-change: transform;
-        }
-        .ticker-text {
-            white-space: nowrap;
-            padding-right: 3em;
-        }
-        .ticker-text .ticker-malware {
-            color: var(--accent2, var(--green));
-            font-weight: bold;
-            text-shadow: 0 0 4px var(--accent2, var(--green));
-        }
-
-        /* ── URL BAR ── */
-        .url-bar {
-            background: var(--accent1);
-            color: #000000;
-            text-shadow: none;
-            font-size: 20px;
-            padding: 2px 10px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            flex-shrink: 0;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            position: relative;
-        }
-        
-        .url-session {
-            font-size: 18px;
-            white-space: nowrap;
-            margin-left: auto;
-            padding-left: 12px;
-        }
-
-        .url-left {
-            display: flex;
-            align-items: center;
-            gap: 4px;
-        }
-
-        .url-session {
-            font-size: 18px;
-        }
-
-        /* Cursor: flashes between normal and inverse (black on var(--green)) */
-        .cursor {
-            color: #000000;
-            animation: cursor-inv-blink 1s step-end infinite;
-        }
-        .content .cursor {
-            color: var(--green);
-        }
-
-        @keyframes cursor-inv-blink {
-            0%, 50% {
-                background: transparent;
-                color: inherit;
-                text-shadow: inherit;
-            }
-            50.01%, 100% {
-                background: var(--green);
-                color: #000000 !important;
-                text-shadow: none;
-            }
-        }
-        @keyframes blink {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0; }
-        }
-
-        /* Boot screen */
-        .boot-screen, .main-content {
-            position: absolute;
-            inset: 0;
-            padding: 10px 16px;
-            overflow-y: auto;
-        }
-        .boot-screen { z-index: 1; }
-        .main-content {
-            display: none;
-            z-index: 0;
-        }
-        .main-content.visible { display: block; }
-        .boot-screen.fade-out { opacity: 0; pointer-events: none; transition: opacity 0.6s ease-out; }
-        .boot-line { display: block; min-height: 1.35em; }
-        .boot-line .c { display: inline; }
-        .boot-prompt-cursor {
-            display: inline;
-            color: var(--green);
-            background: transparent !important;
-            text-shadow: inherit;
-            animation: boot-cursor-blink 1s step-end infinite;
-        }
-        @keyframes boot-cursor-blink {
-            0%, 50% { opacity: 1; }
-            50.01%, 100% { opacity: 0; }
-        }
-        .boot-status-ok { color: inherit; }
-        .boot-status-corrupted {
-            background: var(--green);
-            color: var(--bg);
-            padding: 0 4px;
-            text-shadow: none;
-            font-weight: bold;
-            letter-spacing: 2px;
-        }
-        .boot-prompt-line { display: block; margin-top: 0.5em; }
-        .boot-screen .cursor, .main-content .cursor { animation: cursor-inv-blink 1s step-end infinite; }
-        .main-content .cursor { color: var(--green); }
-        .fade-to-black { background: #000 !important; transition: background 0.8s ease-out; }
-        .fade-to-black .content { background: #000 !important; }
-
-        /* About page (boot-screen style) */
-        .about-page {
-            position: absolute;
-            inset: 0;
-            z-index: 15;
-            background: var(--bg);
-            color: var(--green);
-            text-shadow: 0 0 3px var(--green);
-            padding: 16px 20px;
-            overflow-y: auto;
-            font-size: 20px;
-            line-height: 1.4;
-            display: none;
-        }
-        .about-page.open { display: block; }
-        .about-page .about-inner { max-width: 680px; margin: 0 auto; }
-        .about-page .about-portrait {
-            font-family: 'Courier New', monospace;
-            white-space: pre;
-            font-size: 10px;
-            line-height: 1.15;
-            margin: 12px 0 20px;
-            letter-spacing: 0.5px;
-            color: var(--green);
-        }
-        .about-page .about-text { margin-bottom: 1em; }
-        .about-page .about-close {
-            margin-top: 16px;
-            cursor: pointer;
-            display: inline-block;
-            padding: 4px 12px;
-            border: 1px solid var(--green);
-        }
-        .about-page .about-close:hover { background: var(--green); color: var(--bg); text-shadow: none; }
-
-        /* ── PORTFOLIO GRID ── */
-        #portfolioGrid {
-            display: none;
-            grid-template-columns: repeat(4, 1fr);
-            grid-template-rows: repeat(2, 1fr);
-            gap: 0;
-            position: absolute;
-            inset: 0;
-        }
-
-        .p-tile {
-            border: 1px solid var(--bg);
-            display: flex;
-            flex-direction: column;
-            cursor: pointer;
-            text-decoration: none;
-            overflow: hidden;
-            position: relative;
-        }
-
-        .p-gif {
-            flex: 1;
-            background: var(--bg);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--green);
-            font-size: 18px;
-            overflow: hidden;
-            position: relative;
-        }
-
-        .p-gif img,
-        .p-gif video {
-            position: absolute;
-            inset: 0;
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .p-label {
-            flex-shrink: 0;
-            background: var(--label-bg, var(--green));
-            color: var(--label-fg, #000000);
-            text-align: center;
-            font-size: 18px;
-            padding: 4px 0;
-            text-shadow: none;
-            letter-spacing: 2px;
-            opacity: 1;
-        }
-        .p-tile:hover .p-label {
-            color: var(--chrome-head-fg, var(--green));
-            background: var(--chrome-head-bg, #000080);
-            text-shadow: 0 0 4px rgba(255,255,255,0.5);
-        }
-
-        /* color theme transitions */
-        * { transition: color 0.2s, background-color 0.2s, text-shadow 0.2s; }
-        .terminal, .menu-bar, .ticker-bar, .url-bar, .dropdown, .submenu, .popup { transition: none; }
-    </style>
+/* Terminal menu — right side */
+* { transition:color .2s,background-color .2s,text-shadow .2s; }
+.terminal,.menu-bar,.ticker-bar,.url-bar,.dropdown,.submenu,.popup { transition:none; }
+</style>
 </head>
 <body>
-
+<svg id="customCursor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+  <polygon id="cursorShape" points="2,2 2,16 6,12 9,18 11,17 8,11 14,11" fill="var(--green)" stroke="none"/>
+</svg>
 <div class="terminal scanlines-on" id="terminal">
 
-    <!-- MENU BAR -->
-    <div class="menu-bar" id="menuBar">
-        <div class="menu-items">
+  <!-- MENU BAR -->
+  <div class="menu-bar" id="menuBar">
+    <div class="menu-items">
 
-            <!-- FILE -->
-            <div class="menu-item" id="mFile" onclick="toggleMenu('mFile', event)">
-                <span data-i18n="menu_file"><u>F</u>ile</span>
-                <div class="dropdown">
-                    <div class="dd-item" onclick="closeAll(); window.open(window.location.href, '_blank');" data-i18n="file_newwin">New window</div>
-                    <div class="dd-item has-sub" id="fileOpenSubTrigger" onmouseenter="showFileOpenSub()" onmouseleave="hideFileOpenSub()">
-                        <span data-i18n="file_open">Open</span>
-                        <span>›</span>
-                        <div class="submenu" id="fileOpenSubmenu" onmouseenter="showFileOpenSub()" onmouseleave="hideFileOpenSub()">
-                            <div class="sub-item" onclick="closeAll(); window.open('https://x.com/woundheir__', '_blank');" data-i18n="link_x">X</div>
-                            <div class="sub-item" onclick="closeAll(); window.open('https://objkt.com/users/tz1ZsKoaQgjZegNKE7P9Rn9DyUtetFvdJQcm', '_blank');" data-i18n="open_objkt">Objkt</div>
-                            <div class="sub-item" onclick="closeAll(); window.open('https://katod-project.itch.io/', '_blank');" data-i18n="open_itch">Itch.io</div>
-                            <div class="sub-item" onclick="closeAll(); window.open('https://teia.art/woundheir', '_blank');" data-i18n="open_teia">Teia</div>
-                            <div class="sub-item" onclick="closeAll(); window.open('https://www.artstation.com/woundheir', '_blank');" data-i18n="link_artstation">Artstation</div>
-                            <div class="sub-item" onclick="closeAll(); window.open('https://soundcloud.com/woundheir', '_blank');" data-i18n="link_soundcloud">Soundcloud</div>
-                            <div class="sub-item" onclick="closeAll(); window.open('https://linkedin.com/in/omidrasipour/', '_blank');" data-i18n="link_linkedin">LinkedIn</div>
-                            <div class="sub-item" onclick="closeAll(); window.open('https://objkt.com/tokens/open_objkt/30243', '_blank');" data-i18n="open_latest">Latest artwork</div>
-                        </div>
-                    </div>
-                    <div class="dd-sep"></div>
-                    <div class="dd-item" onclick="closeAll(); window.open('https://woundheir.com/merch', '_blank');" data-i18n="file_print">Print</div>
-                    <div class="dd-sep"></div>
-                    <div class="dd-item" onclick="closeAll(); window.close();" data-i18n="file_exit">Exit</div>
-                </div>
-            </div>
-
-            <!-- VIEW -->
-            <div class="menu-item" id="mView" onclick="toggleMenu('mView', event)">
-                <span data-i18n="menu_view"><u>V</u>iew</span>
-                <div class="dropdown">
-                    <div class="dd-item hl" data-i18n="view_normal">Default view</div>
-                    <div class="dd-item" onclick="toggleFullscreen()" data-i18n="view_full">Fullscreen</div>
-                    <div class="dd-item" onclick="location.reload()" data-i18n="view_reload">Refresh signal</div>
-                    <div class="dd-item" onclick="viewSource()" data-i18n="view_source">Source</div>
-                </div>
-            </div>
-
-            <!-- LINK: Portfolio (Artstation, LinkedIn), Socials -->
-            <div class="menu-item" id="mLink" onclick="toggleMenu('mLink', event)">
-                <span data-i18n="menu_link"><u>L</u>ink</span>
-                <div class="dropdown">
-                    <div class="dd-item has-sub" id="portfolioSubTriggerLink" onmouseenter="showPortfolioSubLink()" onmouseleave="hidePortfolioSubLink()">
-                        <span data-i18n="link_portfolio">Portfolio</span>
-                        <span>›</span>
-                        <div class="submenu" id="portfolioSubmenuLink" onmouseenter="showPortfolioSubLink()" onmouseleave="hidePortfolioSubLink()">
-                            <div class="sub-item" onclick="closeAll(); window.open('https://www.artstation.com/woundheir', '_blank');" data-i18n="link_artstation">Artstation</div>
-                            <div class="sub-item" onclick="closeAll(); window.open('https://linkedin.com/in/omidrasipour/', '_blank');" data-i18n="link_linkedin">LinkedIn</div>
-                        </div>
-                    </div>
-                    <div class="dd-item has-sub" id="socialsSubTriggerLink" onmouseenter="showSocialsSubLink()" onmouseleave="hideSocialsSubLink()">
-                        <span data-i18n="link_socials">Socials</span>
-                        <span>›</span>
-                        <div class="submenu" id="socialsSubmenuLink" onmouseenter="showSocialsSubLink()" onmouseleave="hideSocialsSubLink()">
-                            <div class="sub-item" onclick="closeAll(); window.open('https://x.com/woundheir', '_blank');" data-i18n="link_x">X (Twitter)</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- DOWNLOADS -->
-            <div class="menu-item" id="mDownloads" onclick="toggleMenu('mDownloads', event)">
-                <span data-i18n="menu_dl"><u>D</u>ownloads</span>
-                <div class="dropdown">
-                    <div class="dd-item" onclick="closeAll(); window.open('https://woundheir.com/bandcamp', '_blank');" data-i18n="dl_music">Music</div>
-                    <div class="dd-item" onclick="closeAll(); window.open('https://woundheir.com/wallpaper', '_blank');" data-i18n="dl_wall">Wallpaper</div>
-                    <div class="dd-item" onclick="closeAll(); window.open('https://woundheir.com/wallpaper', '_blank');" data-i18n="dl_gif">Gif</div>
-                </div>
-            </div>
-
-            <!-- SETUP -->
-            <div class="menu-item" id="mSetup" onclick="toggleMenu('mSetup', event)">
-                <span data-i18n="menu_setup"><u>S</u>etup</span>
-                <div class="dropdown" style="min-width:250px;">
-                    <!-- Language with submenu -->
-                    <div class="dd-item has-sub" id="langSubTrigger" onmouseenter="showLangSub()" onmouseleave="hideLangSub()">
-                        <span data-i18n="setup_lang">Language</span>
-                        <span>›</span>
-                        <div class="submenu" id="langSubmenu" onmouseenter="showLangSub()" onmouseleave="hideLangSub()">
-                            <div class="sub-item active-lang" id="lang-en" onclick="setLang('en', event)">English ✓</div>
-                            <div class="sub-item" id="lang-it" onclick="setLang('it', event)">Italiano</div>
-                            <div class="sub-item" id="lang-fr" onclick="setLang('fr', event)">Français</div>
-                        </div>
-                    </div>
-                    <!-- Terminal options — opens popup -->
-                    <div class="dd-item" onclick="openPopup('terminalPopup', event)" data-i18n="setup_terminal">Terminal options</div>
-                    <div class="dd-sep"></div>
-                    <div class="dd-item" onclick="resetTerminalOptions()" data-i18n="setup_reset">Reset terminal to defaults</div>
-                </div>
-            </div>
-
-            <!-- HELP -->
-            <div class="menu-item" id="mHelp" onclick="toggleMenu('mHelp', event)">
-                <span data-i18n="menu_help"><u>H</u>elp</span>
-                <div class="dropdown">
-                    <div class="dd-item" onclick="openAboutPage(event)" data-i18n="help_about">About</div>
-                    <div class="dd-item" onclick="closeAll(); window.location.href='mailto:omidrasipour@gmail.com';" data-i18n="help_contact">Contact</div>
-                </div>
-            </div>
-
+      <div class="menu-item" id="mTerminal" onclick="toggleMenu('mTerminal',event)">
+        <span><u>T</u>erminal</span>
+        <div class="dropdown terminal-dropdown" style="min-width:260px;max-height:80vh;overflow-y:auto;" onclick="event.stopPropagation()">
+          <div id="themeMenu"></div>
+          <div class="popup-sep"></div>
+          <div class="popup-item" style="opacity:.6;cursor:default;font-size:17px;" data-i18n="tFont">&#9472;&#9472; Font &#9472;&#9472;</div>
+          <div class="popup-item hl" id="fontCourier" onclick="setFont('Courier New',this)" data-i18n="tFontCourier">Courier New (default)</div>
+          <div class="popup-sep"></div>
+          <div class="popup-item" style="opacity:.6;cursor:default;font-size:17px;" data-i18n="tEffects">&#9472;&#9472; Effects &#9472;&#9472;</div>
+          <div class="popup-item effect-row" id="opt-scan" onclick="toggleEffect('scan',this)"><span data-i18n="tScanlines">Scanlines</span><span class="effect-value" style="background:var(--chrome-head-fg,var(--green));color:var(--chrome-head-bg,#000);border:1px solid var(--chrome-head-fg,var(--green));padding:1px 8px;letter-spacing:2px;">ON</span></div>
+          <div class="popup-item effect-row" id="opt-flicker" onclick="toggleEffect('flicker',this)"><span data-i18n="tFlicker">CRT Flicker</span><span class="effect-value" style="background:var(--chrome-head-bg,#000);color:var(--chrome-head-fg,var(--green));border:1px solid var(--chrome-head-fg,var(--green));padding:1px 8px;letter-spacing:2px;">OFF</span></div>
+          <div class="popup-item effect-row" id="opt-glitch" onclick="toggleEffect('glitch',this)"><span data-i18n="tGlitch">Glitch</span><span class="effect-value" style="background:var(--chrome-head-bg,#000);color:var(--chrome-head-fg,var(--green));border:1px solid var(--chrome-head-fg,var(--green));padding:1px 8px;letter-spacing:2px;">OFF</span></div>
+          <div class="popup-item effect-row" id="opt-rgb" onclick="toggleEffect('rgb',this)"><span data-i18n="tRgb">RGB split</span><span class="effect-value" style="background:var(--chrome-head-bg,#000);color:var(--chrome-head-fg,var(--green));border:1px solid var(--chrome-head-fg,var(--green));padding:1px 8px;letter-spacing:2px;">OFF</span></div>
+          <div class="popup-item effect-row" id="opt-bleed" onclick="toggleEffect('bleed',this)"><span data-i18n="tBleed">Pixel bleed</span><span class="effect-value" style="background:var(--chrome-head-bg,#000);color:var(--chrome-head-fg,var(--green));border:1px solid var(--chrome-head-fg,var(--green));padding:1px 8px;letter-spacing:2px;">OFF</span></div>
+          <div class="popup-sep"></div>
+          <div class="popup-item effect-row" id="opt-vhs" onclick="toggleEffect('vhs',this)"><span data-i18n="tVhs">VHS tracking</span><span class="effect-value" style="background:var(--chrome-head-bg,#000);color:var(--chrome-head-fg,var(--green));border:1px solid var(--chrome-head-fg,var(--green));padding:1px 8px;letter-spacing:2px;">OFF</span></div>
+          <div class="popup-item" onclick="closeAll()" data-i18n="tClose">[ Close ]</div>
         </div>
-    </div>
+      </div>
 
-    <!-- TICKER (content filled by JS for random order; scroll speed smoothed on hover) -->
-    <div class="ticker-bar" id="tickerBar">
-        <div class="ticker-track" id="tickerTrack">
-            <span class="ticker-text" id="tickerSpan1"></span>
-            <span class="ticker-text" id="tickerSpan2"></span>
-        </div>
-    </div>
-
-    <!-- CONTENT -->
-    <div class="content" id="content" onclick="closeAll()">
-
-        <div id="bootScreen" class="boot-screen">
-            <div id="bootLines"></div>
-
-            <!-- PORTFOLIO GRID — order: X, Objkt, Itch.io, Teia, Artstation, Soundcloud, LinkedIn, Latest artwork -->
-            <div id="portfolioGrid">
-                <a href="https://x.com/woundheir__" target="_blank" class="p-tile">
-                    <div class="p-gif">
-                        <img src="gifs/x.gif" alt="">
-                    </div>
-                    <div class="p-label">X</div>
-                </a>
-                <a href="https://objkt.com/users/tz1ZsKoaQgjZegNKE7P9Rn9DyUtetFvdJQcm" target="_blank" class="p-tile">
-                    <div class="p-gif">
-                        <img src="gifs/objkt.gif" alt="">
-                    </div>
-                    <div class="p-label">OBJKT</div>
-                </a>
-                <a href="https://katod-project.itch.io/" target="_blank" class="p-tile">
-                    <div class="p-gif">
-                        <img src="gifs/itch.gif" alt="">
-                    </div>
-                    <div class="p-label">ITCH.IO</div>
-                </a>
-                <a href="https://teia.art/woundheir" target="_blank" class="p-tile">
-                    <div class="p-gif">
-                        <img src="gifs/teia.gif" alt="">
-                    </div>
-                    <div class="p-label">TEIA</div>
-                </a>
-                <a href="https://www.artstation.com/woundheir" target="_blank" class="p-tile">
-                    <div class="p-gif">
-                        <img src="gifs/artstation.gif" alt="">
-                    </div>
-                    <div class="p-label">ARTSTATION</div>
-                </a>
-                <a href="https://soundcloud.com/woundheir" target="_blank" class="p-tile">
-                    <div class="p-gif">
-                        <img src="gifs/soundcloud.gif" alt="">
-                    </div>
-                    <div class="p-label">SOUNDCLOUD</div>
-                </a>
-                <a href="https://linkedin.com/in/omidrasipour/" target="_blank" class="p-tile">
-                    <div class="p-gif">
-                        <img src="gifs/empty.gif" alt="">
-                    </div>
-                    <div class="p-label">LINKEDIN</div>
-                </a>
-                <a href="https://objkt.com/tokens/open_objkt/30243" target="_blank" class="p-tile">
-                    <div class="p-gif">
-                        <img src="gifs/latest-artwork.gif" alt="">
-                    </div>
-                    <div class="p-label">LATEST ARTWORK</div>
-                </a>
+      <div class="menu-item" id="mFile" onclick="toggleMenu('mFile',event)">
+        <span><u>F</u>ile</span>
+        <div class="dropdown">
+          <div class="dd-item" onclick="closeAll();window.open(window.location.href,'_blank')" data-i18n="fNewWindow">New window</div>
+          <div class="dd-item has-sub" onmouseenter="showSub('fileOpenSub')" onmouseleave="hideSub('fileOpenSub')">
+            <span data-i18n="fOpen">Open</span><span>&#8250;</span>
+            <div class="submenu" id="fileOpenSub" onmouseenter="showSub('fileOpenSub')" onmouseleave="hideSub('fileOpenSub')">
+              <div class="sub-item" onclick="closeAll();window.open('https://x.com/woundheir__','_blank')">X</div>
+              <div class="sub-item" onclick="closeAll();window.open('https://objkt.com/users/tz1ZsKoaQgjZegNKE7P9Rn9DyUtetFvdJQcm','_blank')">Objkt</div>
+              <div class="sub-item" onclick="closeAll();window.open('https://katod-project.itch.io/','_blank')">Itch.io</div>
+              <div class="sub-item" onclick="closeAll();window.open('https://teia.art/woundheir','_blank')">Teia</div>
+              <div class="sub-item" onclick="closeAll();window.open('https://www.artstation.com/woundheir','_blank')">Artstation</div>
+              <div class="sub-item" onclick="closeAll();window.open('https://soundcloud.com/woundheir','_blank')">Soundcloud</div>
+              <div class="sub-item" onclick="closeAll();window.open('https://linkedin.com/in/omidrasipour/','_blank')">LinkedIn</div>
             </div>
+          </div>
+          <div class="dd-sep"></div>
+          <div class="dd-item" onclick="closeAll();window.close()" data-i18n="fExit">Exit</div>
+        </div>
+      </div>
 
-            <!-- ABOUT PAGE (boot-style overlay) -->
-            <div id="aboutPage" class="about-page">
-                <div class="about-inner">
-                    <div class="about-portrait" aria-hidden="true">
-  _____
- |  o  |
- | ___ |
- |/   \|
- |_____|
-  |   |
-  |___|
-                    </div>
-                    <div class="about-text">
-                        <strong>woundheir</strong> — digital artist & creative developer.<br><br>
-                        This is a sample about me. You can replace it later with your own bio: music, visuals, games, and experiments on the web and on-chain. Based somewhere between pixels and noise.
-                    </div>
-                    <div class="about-close" onclick="closeAboutPage()" data-i18n="btn_close">[ Close ]</div>
-                </div>
+      <div class="menu-item" id="mView" onclick="toggleMenu('mView',event)">
+        <span><u>V</u>iew</span>
+        <div class="dropdown">
+          <div class="dd-item hl" data-i18n="vDefault">Default view</div>
+          <div class="dd-item" onclick="closeAll();toggleFullscreen()" data-i18n="vFullscreen">Fullscreen</div>
+          <div class="dd-item" onclick="closeAll();window.open('view-source:'+window.location.href,'_blank')" data-i18n="vSource">Source</div>
+        </div>
+      </div>
+
+      <div class="menu-item" id="mRefresh" onclick="closeAll();location.reload()">
+        <span><u>R</u>efresh</span>
+      </div>
+
+
+
+      <div class="menu-item" id="mUtils" onclick="toggleMenu('mUtils',event)">
+        <span><u>U</u>tilities</span>
+        <div class="dropdown" style="min-width:210px;">
+          <div class="dd-item" onclick="closeAll();openUtility('utilTeletext')" data-i18n="uTeletext">&#9619; Teletext Converter</div>
+          <div class="dd-item" onclick="closeAll();openUtility('utilAscii')" data-i18n="uAscii">&#9608; ASCII Art Generator</div>
+        </div>
+      </div>
+
+      <div class="menu-item" id="mSetup" onclick="toggleMenu('mSetup',event)">
+        <span><u>S</u>etup</span>
+        <div class="dropdown" style="min-width:250px;">
+          <div class="dd-item has-sub" onmouseenter="showSub('langSub')" onmouseleave="hideSub('langSub')">
+            <span data-i18n="sLanguage">Language</span><span>&#8250;</span>
+            <div class="submenu" id="langSub" onmouseenter="showSub('langSub')" onmouseleave="hideSub('langSub')">
+              <div class="sub-item active-lang" id="lang-en" onclick="setLang('en',event)">English &#10003;</div>
+              <div class="sub-item" id="lang-it" onclick="setLang('it',event)">Italiano</div>
+              <div class="sub-item" id="lang-fr" onclick="setLang('fr',event)">Fran&#231;ais</div>
+              <div class="sub-item" id="lang-ja" onclick="setLang('ja',event)">日本語</div>
             </div>
+          </div>
+          <div class="dd-sep"></div>
+          <div class="dd-item" onclick="resetTerminalOptions()" data-i18n="sReset">Reset terminal to defaults</div>
         </div>
+      </div>
 
-        <!-- TERMINAL OPTIONS POPUP -->
-        <div class="popup" id="terminalPopup" style="left:30%;">
-            <div class="popup-head" data-i18n="setup_terminal">Terminal options</div>
-            <div id="themeMenu"></div>
-            <div class="popup-sep"></div>
-            <div class="popup-item popup-section" style="opacity:0.6; cursor:default; font-size:17px;">── Font ──</div>
-            <div class="popup-item hl" id="fontCourier" onclick="setFont('Courier New', this)">Courier New (default)</div>
-            <div class="popup-sep"></div>
-            <div class="popup-item popup-section" style="opacity:0.6; cursor:default; font-size:17px;">── Effects ──</div>
-            <div class="popup-item effect-row" id="opt-scan" onclick="toggleScanlines(this)"><span class="effect-label">Scanlines</span><span class="effect-value">[ ON  ]</span></div>
-            <div class="popup-item effect-row" id="opt-flicker" onclick="toggleFlicker(this)"><span class="effect-label">CRT Flicker</span><span class="effect-value">[ OFF ]</span></div>
-            <div class="popup-item effect-row" id="opt-glitch" onclick="toggleGlitch(this)"><span class="effect-label">Glitch</span><span class="effect-value">[ OFF ]</span></div>
-            <div class="popup-item effect-row" id="opt-dynoise" onclick="toggleDynoise(this)"><span class="effect-label">Dynamic noise</span><span class="effect-value">[ OFF ]</span></div>
-            <div class="popup-item effect-row" id="opt-rgb" onclick="toggleRgb(this)"><span class="effect-label">RGB split</span><span class="effect-value">[ OFF ]</span></div>
-            <div class="popup-item effect-row" id="opt-raster" onclick="toggleRaster(this)"><span class="effect-label">Raster bars</span><span class="effect-value">[ OFF ]</span></div>
-            <div class="popup-item effect-row" id="opt-bleed" onclick="toggleBleed(this)"><span class="effect-label">Pixel bleed</span><span class="effect-value">[ OFF ]</span></div>
-            <div class="popup-sep"></div>
-            <div class="popup-item" onclick="closePopup('terminalPopup')" data-i18n="btn_close">[ Close ]</div>
+      <div class="menu-item" id="mHelp" onclick="toggleMenu('mHelp',event)">
+        <span><u>H</u>elp</span>
+        <div class="dropdown" style="min-width:220px;">
+          <div class="dd-item" onclick="openAboutPage(event)" data-i18n="hAbout">About</div>
+          <div class="dd-item" onclick="openTeletextGuidePage(event)" data-i18n="hTeletextGuide">Teletext Guide</div>
+          <div class="dd-item" onclick="openAsciiGuidePage(event)" data-i18n="hAsciiGuide">ASCII Guide</div>
+          <div class="dd-sep"></div>
+          <div class="dd-item" onclick="closeAll();window.location.href='mailto:omidrasipour@gmail.com'" data-i18n="hContact">Contact</div>
         </div>
+      </div>
 
     </div>
+    <div style="font-size:13px;opacity:.5;padding:0 10px;flex-shrink:0;letter-spacing:1px;" data-i18n="ver">v1.5</div>
+  </div>
 
-    <!-- URL BAR -->
-    <div class="url-bar" id="urlBar">
-        <div class="url-left">
-            <span id="urlText">http://woundheir.com</span>
+  <!-- TICKER -->
+  <div class="ticker-bar" id="tickerBar">
+    <div class="ticker-track" id="tickerTrack">
+      <span class="ticker-text" id="tickerSpan1"></span>
+      <span class="ticker-text" id="tickerSpan2"></span>
+    </div>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="content" id="content" onclick="closeAll()">
+
+    <!-- BOOT SCREEN -->
+    <div id="bootScreen" class="boot-screen">
+      <div id="bootLines"></div>
+      <div id="portfolioGrid">
+        <div class="p-tile" onclick="openUtility('utilTeletext')"><div class="p-gif"><img src="gifs/teletext.gif" alt=""></div><div class="p-label" data-i18n="gTeletext">TELETEXT</div></div>
+        <div class="p-tile" onclick="openUtility('utilAscii')"><div class="p-gif"><img src="gifs/ascii.gif" alt=""></div><div class="p-label" data-i18n="gAscii">ASCII GENERATOR</div></div>
+        <a href="https://x.com/woundheir__" target="_blank" class="p-tile"><div class="p-gif"><img src="gifs/x.gif" alt=""></div><div class="p-label" data-i18n="gX">X</div></a>
+        <a href="https://objkt.com/users/tz1ZsKoaQgjZegNKE7P9Rn9DyUtetFvdJQcm" target="_blank" class="p-tile"><div class="p-gif"><img src="gifs/objkt.gif" alt=""></div><div class="p-label" data-i18n="gObjkt">OBJKT</div></a>
+        <a href="https://katod-project.itch.io/" target="_blank" class="p-tile"><div class="p-gif"><img src="gifs/itch.gif" alt=""></div><div class="p-label" data-i18n="gItch">ITCH.IO</div></a>
+        <a href="https://teia.art/woundheir" target="_blank" class="p-tile"><div class="p-gif"><img src="gifs/teia.gif" alt=""></div><div class="p-label" data-i18n="gTeia">TEIA</div></a>
+        <a href="https://www.artstation.com/woundheir" target="_blank" class="p-tile"><div class="p-gif"><img src="gifs/artstation.gif" alt=""></div><div class="p-label" data-i18n="gArt">ARTSTATION</div></a>
+        <a href="https://soundcloud.com/woundheir" target="_blank" class="p-tile"><div class="p-gif"><img src="gifs/soundcloud.gif" alt=""></div><div class="p-label" data-i18n="gSound">SOUNDCLOUD</div></a>
+      </div>
+
+      <!-- ABOUT PAGE -->
+      <div id="aboutPage" class="about-page" onclick="event.stopPropagation()">
+        <div class="about-shell">
+          <div class="about-body">
+            <div class="about-artist">
+              <div class="about-portrait-wrap">
+<pre class="about-portrait" id="aboutPortrait">                   █▒▒░░░▒▒▒
+                 ▒▒▒░░░░░░░▒▒▒▒
+               ▓▒▒▒░░░░░░░░░░▒▒▒▒
+             █▓▒▒▒░░░░░░░░░░░░▒▒▒▓
+            ▒▓▒▒▒▒░░░░░░░░░░░░▒▒▒▒▓▓
+           ▓▓▓▒▒▒▒░░░░░░░░░░░░░▒▒▒▓▓▓
+          ▓▓▓▒▒▒▒▒▒░░░░░░░░░░░░▒▒▒▒▓▓▒
+         ▒▓▓▓▓▒▒▒▒░░░░░░░ ░░░░░░▒▒▒▓▓▓█
+         ▓▓▓▓▓▒▒▒░░░░░░  ░░░░░░▒▒▒▒▓▓▓▓
+         ▓▓▓▓▒▒░░░            ░░░▒▒▓▓▓▓
+        ▓▓▓▓▒░░░                ░░░▒▓▓▓▓
+        ▓▓▓▒░░                    ░░▒▓▓▓
+       ▒▓▓░░                        ░▒▓▓▒
+       ▓▓▒                           ░▒▓▓
+      ▓▓▒░                            ░▒▓▓
+      ▓▒░                              ░▒▓
+     ▓▒░░                              ░░▒▓
+     ▓░░                                ░▒▓
+     ▓▒░░                                ░▒▒▒
+     ▓▒░░                                ░░▒▓
+     ▓▒░░                                ░░▒▒
+     ▓▒░░                                ░░▒▓
+     ▓▒░░                               ░░░▒▒
+     █▓░░░                               ░▒▒
+      ▓░░░░                            ░░░░▓
+      ▒▒░░░░                         ░░░░░▒▒
+       ▒▒░░░░                        ░░░░░▓
+       ▒▒░░░░░                      ░░░░░▒█
+        ▓▒░░░░                      ░░░░▒▒
+         ▒░░░░░                    ░░░░▒▒
+          ▒░░░░░                  ░░░░▒▒
+           ▒░░░░░                ░░░░░▒
+            ▒▒░░░                ░░░▒▒
+              ▒▒░░░              ░░░▒▒
+                ▒▒░░            ░░▒▒
+                 ▒▒░░         ░░░▒▒
+                  ▒▒▒░░      ░░▒▒█
+                    ▒▒░     ░░▒▓
+                     █▒░   ░░▒
+                         ░░
+</pre>
+              </div>
+              <div class="about-artist-bio">
+                <p data-i18n="aboutLine1">woundheir &mdash; digital artist &amp; creative developer.</p>
+                <p data-i18n="aboutLine2">Visuals &mdash; 2D games &mdash; music &mdash; experiments on the web and on-chain.</p>
+                <p data-i18n="aboutLine3">Based on a cathode ray tube.</p>
+              </div>
+            </div>
+          </div>
+          <div class="about-close" onclick="closeAboutPage()" data-i18n="aboutClose">[ Close ]</div>
         </div>
-        <span class="url-session" id="sessionTimer">session 00:00</span>
+      </div>
+
+      <!-- TELETEXT GUIDE PAGE -->
+      <div id="teletextGuidePage" class="help-guide-page" onclick="event.stopPropagation()">
+        <div class="help-guide-shell">
+          <div class="help-guide-title" data-i18n="hTeletextGuide">Teletext Guide</div>
+          <div class="help-guide-body">
+            <div id="teletextGuideTyped" class="help-guide-typed"></div>
+          </div>
+          <div class="about-close" onclick="closeGuidePage()" data-i18n="aboutClose">[ Close ]</div>
+        </div>
+      </div>
+
+      <!-- ASCII GUIDE PAGE -->
+      <div id="asciiGuidePage" class="help-guide-page" onclick="event.stopPropagation()">
+        <div class="help-guide-shell">
+          <div class="help-guide-title" data-i18n="hAsciiGuide">ASCII Guide</div>
+          <div class="help-guide-body">
+            <div id="asciiGuideTyped" class="help-guide-typed"></div>
+          </div>
+          <div class="about-close" onclick="closeGuidePage()" data-i18n="aboutClose">[ Close ]</div>
+        </div>
+      </div>
     </div>
 
-</div>
+
+    <!-- ══ TELETEXT CONVERTER ══ -->
+    <div class="utility-overlay" id="utilTeletext">
+      <div class="util-titlebar">
+        <span>&#9619; TELETEXT PHOTO CONVERTER &mdash; P739</span>
+        <span class="util-close-btn" onclick="closeUtility('utilTeletext')">&#10005; CLOSE</span>
+      </div>
+      <div class="util-toolbar">
+        <label data-i18n="uWidth-tt">WIDTH:</label>
+        <input type="number" id="ttWidth" min="24" value="40" oninput="ttSchedule()"
+          style="background:var(--bg);color:var(--green);border:1px solid var(--green);font-family:'Courier New',monospace;font-size:14px;padding:3px 8px;width:56px;outline:none;text-align:center;">
+        <span style="opacity:.3;margin:0 4px;">|</span>
+        <label data-i18n="uTheme">THEME:</label>
+        <div class="tt-dot-row" id="ttThemeRow"></div>
+        <span style="opacity:.3;margin:0 4px;">|</span>
+        <label data-i18n="uBg">BG:</label>
+        <div class="tt-dot-row" id="ttBgRow"></div>
+        <span style="opacity:.3;margin:0 4px;">|</span>
+        <label data-i18n="uTitle-tt">TITLE:</label>
+        <input id="ttTitleInput" maxlength="24" value="" placeholder="filename"
+          style="background:var(--bg);color:var(--green);border:1px solid var(--green);font-family:'Courier New',monospace;font-size:13px;padding:2px 6px;width:120px;outline:none;"
+          oninput="ttSchedule()">
+        <span class="util-spacer"></span>
+        <button class="util-btn util-btn-copy" id="ttCopyBtn" style="display:none" onclick="ttCopy()" data-i18n="ttCopyBtn">&#8711; COPY</button>
+        <button class="util-btn util-btn-dl" id="ttDlBtn" style="display:none" onclick="ttDownload()" data-i18n="ttDlBtn">&#8595; PNG</button>
+      </div>
+      <div class="util-dropzone tt-dropzone-initial" id="ttDropzone" onclick="document.getElementById('ttFileInput').click()">
+        <span data-i18n="uDrop-tt">&#9619;&#9618;&#9617; DROP IMAGE HERE OR CLICK TO UPLOAD &#9617;&#9618;&#9619;</span>
+      </div>
+      <div class="util-workspace" id="ttWorkspace" style="display:none;" onclick="document.getElementById('ttFileInput').click()">
+        <div class="tt-placeholder" id="ttPlaceholder">&#9619;&#9618;&#9617;<br><small>AWAITING INPUT</small></div>
+        <canvas id="ttOutCanvas"></canvas>
+      </div>
+      <div class="util-statusbar" id="ttStatus">&nbsp;</div>
+      <input type="file" id="ttFileInput" accept="image/*" style="display:none" onchange="ttHandleFile(this)">
+      <canvas id="ttSrcCanvas" style="display:none"></canvas>
+    </div>
+
+    <!-- ══ ASCII ART GENERATOR ══ -->
+    <div class="utility-overlay" id="utilAscii">
+      <div class="util-titlebar">
+        <span>&#9608; ASCII ART GENERATOR</span>
+        <span class="util-close-btn" onclick="closeUtility('utilAscii')">&#10005; CLOSE</span>
+      </div>
+      <div class="util-toolbar">
+        <label data-i18n="uWidth-ascii">WIDTH:</label>
+        <input type="number" id="asciiWidth" min="40" value="100" oninput="asciiSchedule()" style="background:var(--bg);color:var(--green);border:1px solid var(--green);font-family:'Courier New',monospace;font-size:14px;padding:3px 8px;width:70px;outline:none;text-align:center;">
+
+
+        <span style="opacity:.3;margin:0 4px;">|</span>
+        <label data-i18n="uCharset">CHARSET:</label>
+        <select id="asciiCharset" onchange="asciiSchedule()">
+          <option value="detailed">Detailed</option>
+          <option value="blocks">Blocks &#9619;&#9618;&#9617;</option>
+          <option value="minimal">Minimal</option>
+          <option value="numbers">Numbers</option>
+          <option value="binary">Binary 01</option>
+        </select>
+        <span style="opacity:.3;margin:0 4px;">|</span>
+        <label data-i18n="uInvert">INVERT:</label>
+        <input type="checkbox" id="asciiInvert" style="display:none;">
+        <div id="asciiInvertToggle" onclick="var cb=document.getElementById('asciiInvert');cb.checked=!cb.checked;this.textContent=cb.checked?'ON':'OFF';this.style.background=cb.checked?'var(--chrome-head-fg,var(--green))':'var(--chrome-head-bg,#000)';this.style.color=cb.checked?'var(--chrome-head-bg,#000)':'var(--chrome-head-fg,var(--green))';asciiSchedule();" style="font-family:'Courier New',monospace;font-size:13px;color:var(--chrome-head-fg,var(--green));background:var(--chrome-head-bg,#000);border:1px solid var(--chrome-head-fg,var(--green));padding:1px 8px;cursor:pointer;user-select:none;letter-spacing:2px;flex-shrink:0;">OFF</div>
+        <span style="opacity:.3;margin:0 4px;">|</span>
+        <label>TERMINAL:</label>
+        <span id="asciiThemeLabel" style="color:var(--chrome-head-fg,var(--green));background:var(--chrome-head-bg,#000);font-size:13px;letter-spacing:1px;padding:1px 6px;">ZX SPECTRUM</span>
+        <span style="opacity:.3;margin:0 4px;">|</span>
+        <label data-i18n="uTitle-ascii">TITLE:</label>
+        <input id="asciiTitleInput" maxlength="24" value="" placeholder="filename"
+          style="background:var(--bg);color:var(--green);border:1px solid var(--green);font-family:'Courier New',monospace;font-size:13px;padding:2px 6px;width:100px;outline:none;">
+        <span class="util-spacer"></span>
+        <button class="util-btn util-btn-copy" id="asciiCopyBtn" style="display:none" onclick="asciiCopy()" data-i18n="asciiCopyBtn">&#8711; COPY TXT</button>
+        <button class="util-btn util-btn-dl" id="asciiDlTxt" style="display:none" onclick="asciiDownloadTxt()" data-i18n="asciiDlTxt">&#8595; TXT</button>
+        <button class="util-btn util-btn-dl" id="asciiDlImg" style="display:none" onclick="asciiDownloadImg()" data-i18n="asciiDlImg">&#8595; PNG</button>
+      </div>
+      <div class="util-dropzone ascii-dropzone-initial" id="asciiDropzone" onclick="document.getElementById('asciiFileInput').click()">
+        <span data-i18n="uDrop-ascii">&#9619;&#9618;&#9617; DROP IMAGE HERE OR CLICK TO UPLOAD &#9617;&#9618;&#9619;</span>
+      </div>
+      <div class="util-workspace" id="asciiWorkspace" style="display:none;" onclick="document.getElementById('asciiFileInput').click()">
+        <div class="ascii-output-wrap">
+          <pre id="asciiOutput"></pre>
+        </div>
+      </div>
+      <div class="util-statusbar" id="asciiStatus">&nbsp;</div>
+      <input type="file" id="asciiFileInput" accept="image/*" style="display:none" onchange="asciiHandleFile(this)">
+      <canvas id="asciiSrcCanvas" style="display:none"></canvas>
+    </div>
+
+  </div><!-- end .content -->
+
+  <!-- URL BAR -->
+  <div class="url-bar" id="urlBar">
+    <span id="urlText">http://woundheir.com</span>
+    <span class="url-session" id="sessionTimer">session 00:00</span>
+  </div>
+
+</div><!-- end .terminal -->
 
 <script>
-    /**
-     * WOUNDHEIR terminal-style site
-     * Sections: i18n → submenu helpers → setLang → themes → setColor/setFont → effects → menu/popup → boot → ticker → init
-     */
-    const i18n = {
-        en: {
-            menu_file:'<u>F</u>ile', menu_view:'<u>V</u>iew', menu_link:'<u>L</u>ink',
-            menu_dl:'<u>D</u>ownloads', menu_setup:'<u>S</u>etup', menu_help:'<u>H</u>elp',
-            file_open:'Open', file_newwin:'New window', file_print:'Print', file_exit:'Exit',
-            open_latest:'Latest artwork', open_objkt:'Objkt', open_itch:'Itch.io', open_teia:'Teia',
-            view_normal:'Default view', view_full:'Fullscreen', view_reload:'Refresh signal', view_source:'Source',
-            link_art:'Visual art', link_music:'Music', link_bandcamp:'Bandcamp', link_soundcloud:'Soundcloud',
-            link_games:'Games', link_shop:'Shop', link_portfolio:'Portfolio', link_artstation:'Artstation',
-            link_socials:'Socials', link_x:'X (Twitter)', link_linkedin:'LinkedIn',
-            dl_music:'Music', dl_wall:'Wallpaper', dl_gif:'Gif',
-            setup_lang:'Language', setup_terminal:'Terminal options', setup_misc:'Miscellaneous options',
-            setup_cache:'Cache', setup_mail:'Mail and telnet', setup_assoc:'Associations',
-            setup_ext:'File extensions', setup_save:'Save options',
-            setup_reset:'Reset terminal to defaults',
-            help_about:'About', help_contact:'Contact',
-            term_color:'── Color scheme ──', term_green:'Green (default)', term_amber:'Amber',
-            term_white:'White', term_red:'Red', term_blue:'Blue', term_dosblue:'MS-DOS blue',
-            term_apple2:'Apple II green', term_c64:'Commodore 64', term_teletext:'Teletext', term_casio:'Casio / Retro display',
-            term_mode:'── Display mode ──',
-            mode_mono:'Monochrome colors', mode_dos:'MS-DOS blue (default)',
-            term_font:'── Font ──', font_vt:'VT323', font_courier:'Consolas',
-            font_mono:'Courier New (default)',
-            misc_scan:'Scanlines', misc_flicker:'CRT Flicker',
-            btn_close:'[ Close ]',
-        },
-        it: {
-            menu_file:'<u>F</u>ile', menu_view:'<u>V</u>iew', menu_link:'<u>L</u>ink',
-            menu_dl:'<u>D</u>ownloads', menu_setup:'<u>S</u>etup', menu_help:'<u>H</u>elp',
-            file_open:'Apri', file_newwin:'Nuova finestra', file_print:'Stampa', file_exit:'Esci',
-            open_latest:'Ultimo artwork', open_objkt:'Objkt', open_itch:'Itch.io', open_teia:'Teia',
-            view_normal:'Vista predefinita', view_full:'Schermo intero', view_reload:'Aggiorna segnale', view_source:'Sorgente',
-            link_art:'Arte visiva', link_music:'Musica', link_bandcamp:'Bandcamp', link_soundcloud:'Soundcloud',
-            link_games:'Giochi', link_shop:'Shop', link_portfolio:'Portfolio', link_artstation:'Artstation',
-            link_socials:'Social', link_x:'X (Twitter)', link_linkedin:'LinkedIn',
-            dl_music:'Musica', dl_wall:'Sfondo', dl_gif:'Gif',
-            setup_lang:'Lingua', setup_terminal:'Opzioni terminale', setup_misc:'Altre opzioni',
-            setup_cache:'Cache', setup_mail:'Mail e telnet', setup_assoc:'Associazioni',
-            setup_ext:'Estensioni file', setup_save:'Salva opzioni',
-            setup_reset:'Ripristina terminale predefinito',
-            help_about:'Informazioni', help_contact:'Contatto',
-            term_color:'── Schema colori ──', term_green:'Verde (predefinito)', term_amber:'Ambra',
-            term_white:'Bianco', term_red:'Rosso', term_blue:'Blu', term_dosblue:'Blu MS-DOS',
-            term_apple2:'Apple II verde', term_c64:'Commodore 64', term_teletext:'Teletext', term_casio:'Casio / Retro',
-            term_mode:'── Modalità display ──',
-            mode_mono:'Colori monocromatici', mode_dos:'Blu MS-DOS (predefinito)',
-            term_font:'── Font ──', font_vt:'VT323', font_courier:'Consolas',
-            font_mono:'Courier New (predefinito)',
-            misc_scan:'Scanlines', misc_flicker:'Schermo CRT',
-            btn_close:'[ Chiudi ]',
-        },
-        fr: {
-            menu_file:'<u>F</u>ichier', menu_view:'<u>A</u>ffichage', menu_link:'<u>L</u>ien',
-            menu_dl:'<u>T</u>éléchargements', menu_setup:'<u>C</u>onfig', menu_help:'<u>?</u>Aide',
-            file_open:'Ouvrir', file_newwin:'Nouvelle fenêtre', file_print:'Imprimer', file_exit:'Quitter',
-            open_latest:'Dernière œuvre', open_objkt:'Objkt', open_itch:'Itch.io', open_teia:'Teia',
-            view_normal:'Vue par défaut', view_full:'Plein écran', view_reload:'Rafraîchir', view_source:'Source',
-            link_art:'Art visuel', link_music:'Musique', link_bandcamp:'Bandcamp', link_soundcloud:'Soundcloud',
-            link_games:'Jeux', link_shop:'Boutique', link_portfolio:'Portfolio', link_artstation:'Artstation',
-            link_socials:'Réseaux', link_x:'X (Twitter)', link_linkedin:'LinkedIn',
-            dl_music:'Musique', dl_wall:'Fond d\'écran', dl_gif:'Gif',
-            setup_lang:'Langue', setup_terminal:'Options terminal', setup_misc:'Divers',
-            setup_cache:'Cache', setup_mail:'Mail et telnet', setup_assoc:'Associations',
-            setup_ext:'Extensions', setup_save:'Enregistrer',
-            setup_reset:'Réinitialiser le terminal',
-            help_about:'À propos', help_contact:'Contact',
-            term_color:'── Schéma de couleurs ──', term_green:'Vert (défaut)', term_amber:'Ambre',
-            term_white:'Blanc', term_red:'Rouge', term_blue:'Bleu', term_dosblue:'Bleu MS-DOS',
-            term_apple2:'Apple II vert', term_c64:'Commodore 64', term_teletext:'Teletext', term_casio:'Casio / Rétro',
-            term_mode:'── Mode affichage ──',
-            mode_mono:'Couleurs monochrome', mode_dos:'Bleu MS-DOS (défaut)',
-            term_font:'── Police ──', font_vt:'VT323', font_courier:'Consolas',
-            font_mono:'Courier New (défaut)',
-            misc_scan:'Balayage', misc_flicker:'Flicker CRT',
-            btn_close:'[ Fermer ]',
-        }
-    };
+// ── THEMES ──────────────────────────────────────────────────────
+const THEMES = {
+  green:        {green:'#39FF14',bg:'#000',a1:'#39FF14',a2:'#39FF14',tb:'#0a3300'},
+  amber:        {green:'#FFBF00',bg:'#0a0500',a1:'#FFBF00',a2:'#FFBF00',tb:'#332200'},
+  white:        {green:'#F0F0F0',bg:'#000',a1:'#F0F0F0',a2:'#F0F0F0',tb:'#1a1a1a'},
+  red:          {green:'#FF3333',bg:'#0a0000',a1:'#FF3333',a2:'#FF3333',tb:'#330000'},
+  blue:         {green:'#4A9EFF',bg:'#000011',a1:'#4A9EFF',a2:'#4A9EFF',tb:'#000033'},
+  zxspectrum:   {green:'#00FFFF',bg:'#000',a1:'#FF00FF',a2:'#FFFF00',tb:'#000088'},
+  segagenesis:  {green:'#66AAFF',bg:'#000033',a1:'#0033CC',a2:'#FF3300',tb:'#000011',cb:'#0033CC',chb:'#001144',chf:'#66AAFF'},
+  gameboycolor: {green:'#00EEFF',bg:'#220044',a1:'#6600AA',a2:'#FF44AA',tb:'#110022',cb:'#6600AA',chb:'#220044',chf:'#00EEFF',chv:'#FF44AA'},
+  nokia3310:    {green:'#1a2a0a',bg:'#B8D080',a1:'#3a5a1a',a2:'#1a2a0a',tb:'#5a7a2a',cb:'#3a5a1a',chb:'#1a2a0a',chf:'#B8D080',lf:'#000',lb:'#3a5a1a',phb:'#1a2a0a',phf:'#B8D080'},
+  casiogshock:  {green:'#FF6600',bg:'#0a0a0a',a1:'#CC4400',a2:'#FF6600',tb:'#1a0800'},
+  casiofx330:   {green:'#1a3d1a',bg:'#D4E8B0',a1:'#5a7a4a',a2:'#8B6914',tb:'#9aac78',cb:'#9aac78',chb:'#5a7a4a',chf:'#1a3d1a',lf:'#000',lb:'#5a7a4a',phb:'#5a7a4a',phf:'#D4E8B0'},
+  teletext:     {green:'#FFFF00',bg:'#0000FF',a1:'#E60000',a2:'#00FFFF',tb:'#0000CC',cb:'#E60000',chb:'#E60000',chf:'#FFFF00',chv:'#FFF'},
+  win98:        {green:'#FFF',bg:'#000080',a1:'#1084D0',a2:'#FFFF00',tb:'#000040',cb:'#1084D0',chb:'#000080',chf:'#FFF',chv:'#FFFF00'},
+  win95:        {green:'#000',bg:'#008080',a1:'#C0C0C0',a2:'#000',tb:'#004040',tf:'#C0C0C0',cb:'#C0C0C0',chb:'#000080',chf:'#FFF',lf:'#000',lb:'#C0C0C0',phb:'#000080',phf:'#FFF'},
+  norton:       {green:'#FFF',bg:'#000080',a1:'#00FFFF',a2:'#FFFF00',tb:'#000040'},
+  compaqportable:{green:'#55FF55',bg:'#000',a1:'#22AA22',a2:'#88FF88',tb:'#001100',cb:'#22AA22',chb:'#001100',chf:'#55FF55'},
+};
+const THEME_LABELS = {green:'Green phosphor',amber:'Amber phosphor',white:'White phosphor',red:'Red phosphor',blue:'Blue phosphor',compaqportable:'Compaq Portable',segagenesis:'Sega Genesis',zxspectrum:'ZX Spectrum',gameboycolor:'Game Boy Color',nokia3310:'Nokia 3310',casiogshock:'Casio G-Shock',casiofx330:'Casio FX-330',teletext:'Teletext',win98:'Windows 98',win95:'Windows 95',norton:'Norton Commander'};
+let currentTheme = 'zxspectrum';
+let asciiTxt = '';
+const css = (v,val) => document.documentElement.style.setProperty(v,val);
+const uncss = v => document.documentElement.style.removeProperty(v);
 
-    let currentLang = 'en';
-    let langSubHideTimer = null;
+function setColor(key) {
+  const t = THEMES[key]; if (!t) return;
+  currentTheme = key;
+  css('--green',t.green); css('--bg',t.bg);
+  css('--accent1',t.a1||t.green); css('--accent2',t.a2||t.green);
+  css('--ticker-bg',t.tb||'#000');
+  t.tf ? css('--ticker-fg',t.tf) : uncss('--ticker-fg');
+  const chromeBg = t.cb || (t.green==='#000' ? (t.a1||'#333') : t.green);
+  css('--chrome-bg',chromeBg);
+  css('--chrome-head-bg',t.chb||'#000');
+  css('--chrome-head-fg',t.chf||t.green);
+  css('--chrome-hover-fg',t.chv||t.green);
+  css('--popup-hover-bg',t.phb||'#000');
+  css('--popup-hover-fg',t.phf||t.green);
+  css('--label-fg',t.lf||'#000');
+  css('--label-bg',t.lb||'var(--green)');
+  highlightTheme(key);
+  playBeep();
+  urlGo('woundheir.com/setup/terminal/color/'+key);
+  // Update ASCII theme label live
+  const tl = document.getElementById('asciiThemeLabel');
+  if(tl) tl.textContent = (THEME_LABELS[key]||key).toUpperCase();
+  if(asciiTxt) asciiSchedule();
+}
 
-    function showLangSub() {
-        if (langSubHideTimer) clearTimeout(langSubHideTimer);
-        langSubHideTimer = null;
-        const sub = document.getElementById('langSubmenu');
-        if (sub) sub.style.display = 'block';
-    }
-
-    function hideLangSub() {
-        langSubHideTimer = setTimeout(() => {
-            const sub = document.getElementById('langSubmenu');
-            if (sub) sub.style.display = 'none';
-            langSubHideTimer = null;
-        }, 150);
-    }
-
-    let fileOpenSubHideTimer = null;
-
-    function showFileOpenSub() {
-        if (fileOpenSubHideTimer) clearTimeout(fileOpenSubHideTimer);
-        fileOpenSubHideTimer = null;
-        const sub = document.getElementById('fileOpenSubmenu');
-        if (sub) sub.style.display = 'block';
-    }
-    function hideFileOpenSub() {
-        fileOpenSubHideTimer = setTimeout(() => {
-            const sub = document.getElementById('fileOpenSubmenu');
-            if (sub) sub.style.display = 'none';
-            fileOpenSubHideTimer = null;
-        }, 150);
-    }
-
-    let portfolioSubLinkHideTimer = null;
-    let socialsSubLinkHideTimer = null;
-    function showPortfolioSubLink() {
-        if (portfolioSubLinkHideTimer) clearTimeout(portfolioSubLinkHideTimer);
-        portfolioSubLinkHideTimer = null;
-        const sub = document.getElementById('portfolioSubmenuLink');
-        if (sub) sub.style.display = 'block';
-    }
-    function hidePortfolioSubLink() {
-        portfolioSubLinkHideTimer = setTimeout(() => {
-            const sub = document.getElementById('portfolioSubmenuLink');
-            if (sub) sub.style.display = 'none';
-            portfolioSubLinkHideTimer = null;
-        }, 150);
-    }
-    function showSocialsSubLink() {
-        if (socialsSubLinkHideTimer) clearTimeout(socialsSubLinkHideTimer);
-        socialsSubLinkHideTimer = null;
-        const sub = document.getElementById('socialsSubmenuLink');
-        if (sub) sub.style.display = 'block';
-    }
-    function hideSocialsSubLink() {
-        socialsSubLinkHideTimer = setTimeout(() => {
-            const sub = document.getElementById('socialsSubmenuLink');
-            if (sub) sub.style.display = 'none';
-            socialsSubLinkHideTimer = null;
-        }, 150);
-    }
-
-    function setLang(lang, e) {
-        e.stopPropagation();
-        currentLang = lang;
-        // Update lang indicators
-        const names = { en: 'English', it: 'Italiano', fr: 'Français' };
-        ['en', 'it', 'fr'].forEach(l => {
-            const el = document.getElementById('lang-' + l);
-            if (!el) return;
-            el.textContent = names[l] + (l === lang ? ' ✓' : '');
-            el.classList.toggle('active-lang', l === lang);
-        });
-        // Apply translations
-        document.querySelectorAll('[data-i18n]').forEach(el => {
-            const key = el.getAttribute('data-i18n');
-            if (i18n[lang][key]) el.innerHTML = i18n[lang][key];
-        });
-        urlGo('woundheir.com/setup/language/' + lang);
-        closeAll();
-    }
-
-    // ── Color themes ──
-    const themes = {
-        // Monochrome CRT
-        green:   { green: '#39FF14', bg: '#000000', accent1: '#39FF14', accent2: '#39FF14', tickerBg: '#0a3300' },
-        amber:   { green: '#FFBF00', bg: '#0a0500', accent1: '#FFBF00', accent2: '#FFBF00', tickerBg: '#332200' },
-        white:   { green: '#F0F0F0', bg: '#000000', accent1: '#F0F0F0', accent2: '#F0F0F0', tickerBg: '#1a1a1a' },
-        red:     { green: '#FF3333', bg: '#0a0000', accent1: '#FF3333', accent2: '#FF3333', tickerBg: '#330000' },
-        blue:    { green: '#4A9EFF', bg: '#000011', accent1: '#4A9EFF', accent2: '#4A9EFF', tickerBg: '#000033' },
-
-        compaqportable: {
-            green:   '#55FF55',
-            bg:      '#000000',
-            accent1: '#22AA22',
-            accent2: '#88FF88',
-            tickerBg: '#001100',
-            chromeBg:      '#22AA22',
-            chromeHeadBg:  '#001100',
-            chromeHeadFg:  '#55FF55',
-            chromeHoverFg: '#88FF88',
-        },
-        segagenesis: {
-            green:   '#66AAFF',
-            bg:      '#000033',
-            accent1: '#0033CC',
-            accent2: '#FF3300',
-            tickerBg: '#000011',
-            chromeBg:      '#0033CC',
-            chromeHeadBg:  '#001144',
-            chromeHeadFg:  '#66AAFF',
-            chromeHoverFg: '#99CCFF',
-        },
-        zxspectrum: {
-            green:   '#00FFFF',
-            bg:      '#000000',
-            accent1: '#FF00FF',
-            accent2: '#FFFF00',
-            tickerBg: '#000088',
-        },
-        gameboycolor: {
-            green:   '#00EEFF',
-            bg:      '#220044',
-            accent1: '#6600AA',
-            accent2: '#FF44AA',
-            tickerBg: '#110022',
-            chromeBg:      '#6600AA',
-            chromeHeadBg:  '#220044',
-            chromeHeadFg:  '#00EEFF',
-            chromeHoverFg: '#FF44AA',
-        },
-        nokia3310: {
-            green:   '#1a2a0a',
-            bg:      '#B8D080',
-            accent1: '#3a5a1a',
-            accent2: '#1a2a0a',
-            tickerBg: '#5a7a2a',
-            chromeBg:      '#3a5a1a',
-            chromeHeadBg:  '#1a2a0a',
-            chromeHeadFg:  '#B8D080',
-            chromeHoverFg: '#D8F0A0',
-            labelFg: '#000000',
-            labelBg: '#3a5a1a',
-            popupHoverBg: '#3a5a1a',
-            popupHoverFg: '#D8F0A0',
-        },
-        casiogshock: {
-            green:   '#FF6600',
-            bg:      '#0a0a0a',
-            accent1: '#CC4400',
-            accent2: '#FF6600',
-            tickerBg: '#1a0800',
-        },
-        casiofx330: {
-            green:   '#1a3d1a',
-            bg:      '#D4E8B0',
-            accent1: '#5a7a4a',
-            accent2: '#8B6914',
-            tickerBg: '#9aac78',
-            chromeBg:      '#9aac78',
-            chromeHeadBg:  '#5a7a4a',
-            chromeHeadFg:  '#1a3d1a',
-            chromeHoverFg: '#0a1a0a',
-            labelFg: '#000000',
-            labelBg: '#5a7a4a',
-        },
-        teletext: {
-            green:   '#FFFF00',
-            bg:      '#0000FF',
-            accent1: '#E60000',
-            accent2: '#00FFFF',
-            tickerBg: '#0000CC',
-            chromeBg:      '#E60000',
-            chromeHeadBg:  '#E60000',
-            chromeHeadFg:  '#FFFF00',
-            chromeHoverFg: '#FFFFFF',
-        },
-        winvistadark: {
-            green:   '#CCE5FF',
-            bg:      '#0A1A2F',
-            accent1: '#1E3A5F',
-            accent2: '#66AAFF',
-            tickerBg: '#050A1A',
-        },
-        win98: {
-            green:   '#FFFFFF',
-            bg:      '#000080',
-            accent1: '#1084D0',
-            accent2: '#FFFF00',
-            tickerBg: '#000040',
-            chromeBg:      '#1084D0',
-            chromeHeadBg:  '#000080',
-            chromeHeadFg:  '#FFFFFF',
-            chromeHoverFg: '#FFFF00',
-        },
-        win95: {
-            green:   '#000000',
-            bg:      '#008080',
-            accent1: '#C0C0C0',
-            accent2: '#000000',
-            tickerBg: '#004040',
-            tickerFg: '#C0C0C0',
-            chromeBg:      '#C0C0C0',
-            chromeHeadBg:  '#000080',
-            chromeHeadFg:  '#FFFFFF',
-            chromeHoverFg: '#000000',
-            labelBg: '#C0C0C0',
-            labelFg: '#000000',
-            popupHoverBg: '#000080',
-            popupHoverFg: '#FFFFFF',
-            scrollTrack:     '#C0C0C0',
-            scrollThumbLight: '#FFFFFF',
-            scrollThumbDark:  '#808080',
-        },
-        norton: {
-            green:   '#FFFFFF',
-            bg:      '#000080',
-            accent1: '#00FFFF',
-            accent2: '#FFFF00',
-            tickerBg: '#000040',
-        },
-    };
-
-    let currentTheme = 'zxspectrum';
-
-    const themeLabelOverrides = {
-        green: 'Green phosphor',
-        amber: 'Amber phosphor',
-        white: 'White phosphor',
-        red: 'Red phosphor',
-        blue: 'Blue phosphor',
-        compaqportable: 'Compaq Portable',
-        segagenesis: 'Sega Genesis',
-        zxspectrum: 'ZX Spectrum',
-        gameboycolor: 'Game Boy Color',
-        nokia3310: 'Nokia 3310',
-        casiogshock: 'Casio G-Shock',
-        casiofx330: 'Casio FX-330',
-        teletext: 'Teletext',
-        winvistadark: 'Windows Vista Midnight',
-        win98: 'Windows 98',
-        win95: 'Windows 95',
-        norton: 'Norton Commander',
-    };
-
-    function titleCaseWords(s) {
-        return s
-            .split(' ')
-            .filter(Boolean)
-            .map(w => w.charAt(0).toUpperCase() + w.slice(1))
-            .join(' ');
-    }
-
-    function getThemeLabel(key) {
-        if (themes[key] && themes[key].label) return themes[key].label;
-        if (themeLabelOverrides[key]) return themeLabelOverrides[key];
-        return titleCaseWords(
-            key
-                .replace(/_/g, ' ')
-                .replace(/([a-z])(\d)/g, '$1 $2')
-        );
-    }
-
-    function highlightTheme(themeKey) {
-        document.querySelectorAll('#terminalPopup .hl-color').forEach(item => {
-            item.classList.toggle('hl', item.dataset.theme === themeKey);
-        });
-    }
-
-    function buildThemeMenu() {
-        const host = document.getElementById('themeMenu');
-        if (!host) return;
-        host.innerHTML = '';
-
-        const keys = Object.keys(themes);
-        const mono = ['green', 'amber', 'white', 'red', 'blue'];
-        const colorKeys = keys.filter(k => !mono.includes(k));
-
-        function addSection(name, keyList) {
-            const head = document.createElement('div');
-            head.className = 'popup-item popup-section';
-            head.style.opacity = '0.6';
-            head.style.cursor = 'default';
-            head.style.fontSize = '17px';
-            head.textContent = name;
-            host.appendChild(head);
-            keyList.forEach(key => {
-                const item = document.createElement('div');
-                item.className = 'popup-item hl-color';
-                item.dataset.theme = key;
-                item.textContent = getThemeLabel(key) + (key === currentTheme ? ' (default)' : '');
-                item.onclick = (e) => {
-                    e.stopPropagation();
-                    setColor(key, item);
-                };
-                host.appendChild(item);
-            });
-        }
-
-        addSection('── Monochrome ──', mono);
-        addSection('── Color schemes ──', colorKeys);
-
-        highlightTheme(currentTheme);
-    }
-
-    function setColor(theme, el) {
-        const t = themes[theme];
-        if (!t) return;
-        currentTheme = theme;
-        document.documentElement.style.setProperty('--green', t.green);
-        document.documentElement.style.setProperty('--bg', t.bg);
-        if (t.accent1) document.documentElement.style.setProperty('--accent1', t.accent1);
-        if (t.accent2) document.documentElement.style.setProperty('--accent2', t.accent2);
-        if (t.tickerBg) document.documentElement.style.setProperty('--ticker-bg', t.tickerBg);
-        if (t.tickerFg != null) document.documentElement.style.setProperty('--ticker-fg', t.tickerFg);
-        else document.documentElement.style.removeProperty('--ticker-fg');
-        // Never use black for dropdowns/popups – use explicit chromeBg or accent1 when text color is black
-        const chromeBgVal = t.chromeBg != null ? t.chromeBg : (t.green === '#000000' ? (t.accent1 || '#333') : t.green);
-        document.documentElement.style.setProperty('--chrome-bg', chromeBgVal);
-        document.documentElement.style.setProperty('--chrome-head-bg', t.chromeHeadBg != null ? t.chromeHeadBg : '#000000');
-        document.documentElement.style.setProperty('--chrome-head-fg', t.chromeHeadFg != null ? t.chromeHeadFg : t.green);
-        document.documentElement.style.setProperty('--chrome-hover-fg', t.chromeHoverFg != null ? t.chromeHoverFg : t.green);
-        document.documentElement.style.setProperty('--popup-hover-bg', t.popupHoverBg != null ? t.popupHoverBg : '#000000');
-        document.documentElement.style.setProperty('--popup-hover-fg', t.popupHoverFg != null ? t.popupHoverFg : t.green);
-        document.documentElement.style.setProperty('--label-fg', t.labelFg != null ? t.labelFg : '#000000');
-        document.documentElement.style.setProperty('--label-bg', t.labelBg != null ? t.labelBg : 'var(--green)');
-        // Win95-style scrollbar palette
-        const scrollTrack = t.scrollTrack != null ? t.scrollTrack : chromeBgVal;
-        const scrollThumbLight = t.scrollThumbLight != null ? t.scrollThumbLight : '#ffffff';
-        const scrollThumbDark = t.scrollThumbDark != null ? t.scrollThumbDark : '#808080';
-        document.documentElement.style.setProperty('--scroll-track', scrollTrack);
-        document.documentElement.style.setProperty('--scroll-thumb', scrollTrack);
-        document.documentElement.style.setProperty('--scroll-thumb-light', scrollThumbLight);
-        document.documentElement.style.setProperty('--scroll-thumb-dark', scrollThumbDark);
-        document.documentElement.style.setProperty('--scroll-thumb-border', scrollThumbDark);
-        highlightTheme(theme);
-        updateThemeDefaultLabel(theme);
-        playBeep();
-        urlGo('woundheir.com/setup/terminal/color/' + theme);
-    }
-
-    function updateThemeDefaultLabel(themeKey) {
-        document.querySelectorAll('#terminalPopup .hl-color, #terminalPopup .submenu [data-theme]').forEach(item => {
-            const k = item.dataset.theme;
-            if (!k) return;
-            item.textContent = getThemeLabel(k) + (k === themeKey ? ' (default)' : '');
-        });
-    }
-
-    // ── Font ──
-    function setFont(font, el) {
-        document.querySelector('.terminal').style.fontFamily = `'${font}', monospace`;
-        document.querySelectorAll('.popup-item.hl').forEach(i => {
-            if (i.closest('#terminalPopup')) i.classList.remove('hl');
-        });
-        if (el) el.classList.add('hl');
-        urlGo('woundheir.com/setup/terminal/font/' + font.replace(' ','-').toLowerCase());
-    }
-
-    // ── Terminal beep (effects toggle) ──
-    function playBeep() {
-        try {
-            const c = new (window.AudioContext || window.webkitAudioContext)();
-            const t = c.currentTime;
-            const o = c.createOscillator();
-            const g = c.createGain();
-            o.type = 'square';
-            o.frequency.value = 880;
-            g.gain.setValueAtTime(0.15, t);
-            g.gain.linearRampToValueAtTime(0, t + 0.06);
-            o.connect(g); g.connect(c.destination);
-            o.start(t); o.stop(t + 0.07);
-        } catch (e) {}
-    }
-
-    // ── Misc toggles (CRT effects) ──
-    const miscState = { scan: true, flicker: false, glitch: false, dynoise: false, rgb: false, raster: false, bleed: false };
-
-    function setEffectValue(el, on) {
-        const val = el.querySelector && el.querySelector('.effect-value');
-        if (val) val.textContent = on ? '[ ON  ]' : '[ OFF ]';
-    }
-    function toggleScanlines(el) {
-        playBeep();
-        miscState.scan = !miscState.scan;
-        setEffectValue(el, miscState.scan);
-        const term = document.getElementById('terminal');
-        term.classList.toggle('scanlines-on', miscState.scan);
-    }
-    function toggleFlicker(el) {
-        playBeep();
-        miscState.flicker = !miscState.flicker;
-        setEffectValue(el, miscState.flicker);
-        const term = document.getElementById('terminal');
-        term.classList.toggle('flicker-on', miscState.flicker);
-    }
-    function toggleGlitch(el) {
-        playBeep();
-        miscState.glitch = !miscState.glitch;
-        setEffectValue(el, miscState.glitch);
-        document.getElementById('terminal').classList.toggle('glitch-on', miscState.glitch);
-    }
-    function toggleDynoise(el) {
-        playBeep();
-        miscState.dynoise = !miscState.dynoise;
-        setEffectValue(el, miscState.dynoise);
-        document.getElementById('terminal').classList.toggle('dynoise-on', miscState.dynoise);
-    }
-    function toggleRgb(el) {
-        playBeep();
-        miscState.rgb = !miscState.rgb;
-        setEffectValue(el, miscState.rgb);
-        document.getElementById('terminal').classList.toggle('rgb-on', miscState.rgb);
-    }
-    function toggleRaster(el) {
-        playBeep();
-        miscState.raster = !miscState.raster;
-        setEffectValue(el, miscState.raster);
-        document.getElementById('terminal').classList.toggle('raster-on', miscState.raster);
-    }
-    function toggleBleed(el) {
-        playBeep();
-        miscState.bleed = !miscState.bleed;
-        setEffectValue(el, miscState.bleed);
-        document.getElementById('terminal').classList.toggle('bleed-on', miscState.bleed);
-    }
-    function resetTerminalOptions() {
-        const term = document.getElementById('terminal');
-
-        // Default theme: Norton Commander
-        setColor('norton');
-        buildThemeMenu();
-
-        // Reset font (Courier New is the default)
-        setFont('Courier New', document.getElementById('fontCourier'));
-
-        // Default effects: scanlines ON, flicker ON, glitch ON; rest OFF
-        miscState.scan = true;
-        miscState.flicker = true;
-        miscState.glitch = true;
-        miscState.dynoise = false;
-        miscState.rgb = false;
-        miscState.raster = false;
-        miscState.bleed = false;
-
-        term.classList.toggle('scanlines-on', miscState.scan);
-        term.classList.toggle('flicker-on', miscState.flicker);
-        term.classList.toggle('glitch-on', miscState.glitch);
-        term.classList.toggle('dynoise-on', miscState.dynoise);
-        term.classList.toggle('rgb-on', miscState.rgb);
-        term.classList.toggle('raster-on', miscState.raster);
-        term.classList.toggle('bleed-on', miscState.bleed);
-
-        const scanEl = document.getElementById('opt-scan');
-        const flickEl = document.getElementById('opt-flicker');
-        const glitchEl = document.getElementById('opt-glitch');
-        const dynEl = document.getElementById('opt-dynoise');
-        const rgbEl = document.getElementById('opt-rgb');
-        const rasEl = document.getElementById('opt-raster');
-        const bleEl = document.getElementById('opt-bleed');
-        setEffectValue(scanEl, true);
-        setEffectValue(flickEl, true);
-        setEffectValue(glitchEl, true);
-        setEffectValue(dynEl, false);
-        setEffectValue(rgbEl, false);
-        setEffectValue(rasEl, false);
-        setEffectValue(bleEl, false);
-
-        urlGo('woundheir.com/setup/terminal/reset');
-    }
-
-    // ── Menu toggle ──
-    let activeMenu = null;
-
-    function toggleMenu(id, e) {
-        e.stopPropagation();
-        closeAllPopups();
-        const el = document.getElementById(id);
-        if (activeMenu && activeMenu !== id) {
-            document.getElementById(activeMenu).classList.remove('active');
-        }
-        el.classList.toggle('active');
-        activeMenu = el.classList.contains('active') ? id : null;
-        if (activeMenu) urlGo('woundheir.com/' + id.replace('m','').toLowerCase());
-    }
-
-    function closeAll() {
-        if (activeMenu) {
-            document.getElementById(activeMenu).classList.remove('active');
-            activeMenu = null;
-        }
-        const langSub = document.getElementById('langSubmenu');
-        if (langSub) langSub.style.display = 'none';
-        if (langSubHideTimer) clearTimeout(langSubHideTimer);
-        langSubHideTimer = null;
-        urlGo('woundheir.com');
-    }
-
-    // ── Popups ──
-    let activePopup = null;
-
-    function openPopup(id, e) {
-        if (e) e.stopPropagation();
-        closeAllPopups();
-        document.getElementById(id).classList.add('open');
-        activePopup = id;
-        urlGo('woundheir.com/setup/' + id.replace('Popup','').toLowerCase());
-    }
-
-    function closePopup(id) {
-        document.getElementById(id).classList.remove('open');
-        activePopup = null;
-        urlGo('woundheir.com');
-    }
-
-    function closeAllPopups() {
-        document.querySelectorAll('.popup').forEach(p => p.classList.remove('open'));
-        const ap = document.getElementById('aboutPage');
-        if (ap) ap.classList.remove('open');
-        activePopup = null;
-    }
-
-    function openAboutPage(e) {
-        if (e) e.stopPropagation();
-        closeAll();
-        closeAllPopups();
-        document.getElementById('aboutPage').classList.add('open');
-        activePopup = 'aboutPage';
-        urlGo('woundheir.com/help/about');
-    }
-
-    function closeAboutPage() {
-        document.getElementById('aboutPage').classList.remove('open');
-        activePopup = null;
-        urlGo('woundheir.com');
-    }
-
-    // ── URL bar ──
-    function urlGo(url) {
-        document.getElementById('urlText').textContent = 'http://' + url;
-    }
-
-    // ── Misc actions ──
-    function viewSource() {
-        window.open('view-source:' + window.location.href, '_blank');
-        closeAll();
-    }
-
-    function toggleFullscreen() {
-        if (!document.fullscreenElement) document.documentElement.requestFullscreen();
-        else document.exitFullscreen();
-        closeAll();
-    }
-
-    // ── Session timer since visit ──
-    const sessionStart = Date.now();
-    function updateSessionTimer() {
-        const el = document.getElementById('sessionTimer');
-        if (!el) return;
-        const elapsed = Math.floor((Date.now() - sessionStart) / 1000);
-        const mm = String(Math.floor(elapsed / 60)).padStart(2, '0');
-        const ss = String(elapsed % 60).padStart(2, '0');
-        el.textContent = 'session ' + mm + ':' + ss;
-    }
-    setInterval(updateSessionTimer, 1000);
-    updateSessionTimer();
-
-    // ── Ticker: random order each load ──
-    (function initTicker() {
-        const phrases = [
-            '► For better experience use fullscreen — View › Fullscreen ◄',
-            '► Customize your terminal — Setup › Terminal options › Color scheme ◄',
-            '► Download free gif on Download › Gif ◄',
-            '► A suspicious <span class="ticker-malware">malware</span> is detected! ◄',
-            '► Welcome to woundheir.com ◄',
-        ];
-        const shuffled = [...phrases].sort(() => Math.random() - 0.5);
-        const text = shuffled.join(' &nbsp;&nbsp; • &nbsp;&nbsp; ');
-        const s1 = document.getElementById('tickerSpan1');
-        const s2 = document.getElementById('tickerSpan2');
-        if (s1) s1.innerHTML = text;
-        if (s2) s2.innerHTML = text;
-
-        // Smooth speed change on hover (no jump): JS-driven scroll
-        (function runTickerScroll() {
-            const track = document.getElementById('tickerTrack');
-            const bar = document.getElementById('tickerBar');
-            const span1 = document.getElementById('tickerSpan1');
-            if (!track || !bar || !span1) return;
-            const loopWidth = span1.offsetWidth;
-            if (loopWidth <= 0) return;
-
-            let position = 0;
-            const baseSpeed = 90;
-            const hoverSpeed = 28;
-            const lerp = 0.06;
-            let speed = baseSpeed;
-            let lastTime = performance.now();
-            let hover = false;
-
-            bar.addEventListener('mouseenter', () => { hover = true; });
-            bar.addEventListener('mouseleave', () => { hover = false; });
-
-            function tick(now) {
-                const dt = (now - lastTime) / 1000;
-                lastTime = now;
-                const target = hover ? hoverSpeed : baseSpeed;
-                speed += (target - speed) * lerp;
-                position += speed * dt;
-                if (position >= loopWidth) position -= loopWidth;
-                if (position < 0) position += loopWidth;
-                track.style.transform = 'translateX(' + (-position) + 'px)';
-                requestAnimationFrame(tick);
-            }
-            requestAnimationFrame(tick);
-        })();
-    })();
-
-    // ── Random theme + effects on first load ──
-    (function initRandom() {
-        const keys = Object.keys(themes);
-        const rKey = keys[Math.floor(Math.random() * keys.length)];
-        setColor(rKey);
-        buildThemeMenu();
-
-        // Scanlines always on + 1-2 random extras from current valid effects
-        const term = document.getElementById('terminal');
-        const validFx = ['flicker','glitch','dynoise','rgb','raster','bleed'];
-        const shuffled = validFx.sort(() => Math.random() - 0.5);
-        const extras = shuffled.slice(0, 1 + Math.floor(Math.random() * 2));
-        miscState.scan = true;
-        term.classList.add('scanlines-on');
-        extras.forEach(fx => {
-            miscState[fx] = true;
-            term.classList.add(fx + '-on');
-        });
-        // Never enable scanlines + raster together
-        if (miscState.scan && miscState.raster) {
-            miscState.raster = false;
-            term.classList.remove('raster-on');
-        }
-        // Sync popup labels (effect value only)
-        extras.forEach(fx => {
-            const el = document.getElementById('opt-' + fx);
-            if (el) setEffectValue(el, true);
-        });
-    })();
-
-    // ── Boot → Grid ──
-    (function runTerminal() {
-        const bootLines = document.getElementById('bootLines');
-        const grid      = document.getElementById('portfolioGrid');
-
-        function rnd(min, max) { return min + Math.random() * (max - min); }
-        function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
-
-        function bootSound(freq, duration, gain) {
-            try {
-                const c = new (window.AudioContext || window.webkitAudioContext)();
-                const t = c.currentTime;
-                const o = c.createOscillator();
-                const g = c.createGain();
-                o.type = 'square';
-                o.frequency.value = freq;
-                g.gain.setValueAtTime(gain || 0.12, t);
-                g.gain.linearRampToValueAtTime(0, t + (duration || 0.06));
-                o.connect(g); g.connect(c.destination);
-                o.start(t); o.stop(t + (duration || 0.07));
-            } catch(e) {}
-        }
-
-        async function typeLine(text, statusText, statusClass) {
-            const line = document.createElement('div');
-            line.className = 'boot-line';
-            const span = document.createElement('span');
-            span.className = 'c';
-            span.style.display = 'inline';
-            line.appendChild(span);
-            bootLines.appendChild(line);
-            for (let i = 0; i < text.length; i++) {
-                span.textContent += text[i];
-                await delay(rnd(18, 50));
-            }
-            if (statusText) {
-                const s = document.createElement('span');
-                s.className = statusClass || '';
-                s.textContent = statusText;
-                line.appendChild(s);
-            }
-            await delay(rnd(80, 180));
-        }
-
-        function goToGrid() {
-            bootLines.style.transition = 'opacity 0.5s';
-            bootLines.style.opacity = '0';
-            setTimeout(() => {
-                bootLines.style.display = 'none';
-                grid.style.display = 'grid';
-            }, 520);
-        }
-
-        (async () => {
-            bootSound(800, 0.04, 0.1);
-            await typeLine('Initializing display... ', '[OK]', 'boot-status-ok');
-            bootSound(900, 0.03, 0.08);
-            await typeLine('Loading system... ', '[OK]', 'boot-status-ok');
-            bootSound(600, 0.05, 0.1);
-            await typeLine('Checking memory.... ', '[CORRUPTED]', 'boot-status-corrupted');
-            bootSound(400, 0.08, 0.15);
-            await typeLine('Loading graphics... ', '[OK]', 'boot-status-ok');
-            bootSound(350, 0.06, 0.12);
-            for (let i = 0; i < 3; i++) {
-                const empty = document.createElement('div');
-                empty.className = 'boot-line';
-                empty.style.minHeight = '1.35em';
-                bootLines.appendChild(empty);
-            }
-            await typeLine('Continue');
-            const lastLine = bootLines.lastElementChild;
-            if (lastLine) {
-                const cursor = document.createElement('span');
-                cursor.className = 'boot-prompt-cursor';
-                cursor.setAttribute('aria-hidden', 'true');
-                cursor.textContent = '\u258C';
-                lastLine.appendChild(cursor);
-            }
-            const bootScreen = document.getElementById('bootScreen');
-            if (bootScreen) {
-                bootScreen.style.cursor = 'pointer';
-                bootScreen.addEventListener('click', function once() {
-                    bootScreen.removeEventListener('click', once);
-                    goToGrid();
-                }, { once: true });
-            } else {
-                await delay(400);
-                goToGrid();
-            }
-        })();
-
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') {
-                if (activePopup === 'aboutPage') { closeAboutPage(); return; }
-                if (activePopup) { closePopup(activePopup); return; }
-                closeAll();
-                closeAllPopups();
-                return;
-            }
-            if (activePopup) return;
-            if (e.ctrlKey && e.key === 'r') { e.preventDefault(); location.reload(); return; }
-            if (e.key === 'F11') { e.preventDefault(); toggleFullscreen(); return; }
-        });
-
-    })();
-
-    // Prevent clicks inside popups from closing them
-    document.querySelectorAll('.popup').forEach(p => {
-        p.addEventListener('click', e => e.stopPropagation());
+function buildThemeMenu() {
+  const host = document.getElementById('themeMenu'); if (!host) return;
+  host.innerHTML = '';
+  const mono = ['green','amber','white','red','blue'];
+  const color = Object.keys(THEMES).filter(k => !mono.includes(k));
+  function section(label, keys) {
+    const h = document.createElement('div');
+    h.className='popup-item'; h.style.cssText='opacity:.6;cursor:default;font-size:17px;';
+    h.textContent=label; host.appendChild(h);
+    keys.forEach(k => {
+      const el = document.createElement('div');
+      el.className='popup-item hl-color'; el.dataset.theme=k;
+      el.onclick = e => { e.stopPropagation(); setColor(k); };
+      host.appendChild(el);
     });
+  }
+  const t=LANGS[currentLang]||LANGS.en;
+  section(t.thMono, mono);
+  section(t.thColor, color);
+  highlightTheme(currentTheme);
+}
 
-    document.addEventListener('click', () => { closeAll(); closeAllPopups(); });
+function highlightTheme(key) {
+  document.querySelectorAll('.hl-color').forEach(el => {
+    const k = el.dataset.theme;
+    el.classList.toggle('hl', k===key);
+    el.textContent = (THEME_LABELS[k]||k);
+  });
+}
+
+// ── SUBMENU HELPERS ──────────────────────────────────────────────
+const subT = {};
+function showSub(id) {
+  clearTimeout(subT[id]);
+  const el = document.getElementById(id); if (el) el.style.display='block';
+}
+function hideSub(id) {
+  subT[id] = setTimeout(() => {
+    const el = document.getElementById(id); if (el) el.style.display='none';
+  }, 150);
+}
+
+// ── EFFECTS ──────────────────────────────────────────────────────
+const fx = {scan:true,flicker:false,glitch:false,rgb:false,bleed:false,vhs:false};
+const effectClass = {scan:'scanlines-on',flicker:'flicker-on',glitch:'glitch-on',rgb:'rgb-on',bleed:'bleed-on',vhs:'vhs-on'};
+function playBeep() { try { const c=new(window.AudioContext||window.webkitAudioContext)(),t=c.currentTime,o=c.createOscillator(),g=c.createGain(); o.type='square'; o.frequency.value=880; g.gain.setValueAtTime(0.15,t); g.gain.linearRampToValueAtTime(0,t+0.06); o.connect(g); g.connect(c.destination); o.start(t); o.stop(t+0.07); } catch(e){} }
+function setFxLabel(el,on) { const v=el&&el.querySelector('.effect-value'); if(v){ v.textContent=on?'ON':'OFF'; v.style.background=on?'var(--chrome-head-fg,var(--green))':'var(--chrome-head-bg,#000)'; v.style.color=on?'var(--chrome-head-bg,#000)':'var(--chrome-head-fg,var(--green))'; v.style.border='1px solid var(--chrome-head-fg,var(--green))'; v.style.padding='1px 8px'; v.style.letterSpacing='2px'; } }
+function toggleEffect(name, el) {
+  playBeep();
+  fx[name] = !fx[name];
+  setFxLabel(el, fx[name]);
+  var cls = effectClass[name] || (name+'-on');
+  document.getElementById('terminal').classList.toggle(cls, fx[name]);
+}
+function setFont(font,el) {
+  document.querySelector('.terminal').style.fontFamily="'"+font+"',monospace";
+  document.querySelectorAll('#fontCourier').forEach(i=>i.classList.remove('hl'));
+  if(el) el.classList.add('hl');
+}
+function resetTerminalOptions() {
+  setColor('norton'); buildThemeMenu();
+  setFont('Courier New',document.getElementById('fontCourier'));
+  const term=document.getElementById('terminal');
+  Object.keys(fx).forEach(name => {
+    const on = (name==='scan'||name==='flicker'||name==='glitch');
+    fx[name]=on;
+    var cls = effectClass[name] || (name+'-on');
+    term.classList.toggle(cls,on);
+    var opt = document.getElementById('opt-'+name); if(opt) setFxLabel(opt,on);
+  });
+}
+
+// ── MENU & POPUP ─────────────────────────────────────────────────
+let activeMenu=null, activePopup=null, activeUtility=null;
+let helpTypingState=null;
+const ABOUT_TELETEXT_LINES = [
+  'The Teletex Generator encodes image data into visual signal blocks using brightness and color values from the source image.',
+  'The rendered output exists as a structured visual grid.',
+  'PNG export preserves the exact encoded signal and color information.',
+  'Terminal selection does not affect the generated image.',
+  'Visual effects applied in the interface do not affect the PNG export.'
+];
+const ABOUT_ASCII_LINES = [
+  'ASCII Guide',
+  'The ASCII Generator encodes image data into character symbols based on brightness density.',
+  'Output exists as selectable text and rendered image.',
+  'PNG export captures the active terminal state, including foreground and background colors defined by the selected terminal preset.',
+  'Visual effects applied in the interface do not affect the PNG export.',
+  'Terminal selection controls the final rendered color scheme.'
+];
+function toggleMenu(id,e) {
+  e.stopPropagation(); closeAllPopups();
+  const el=document.getElementById(id);
+  if(activeMenu&&activeMenu!==id) document.getElementById(activeMenu).classList.remove('active');
+  el.classList.toggle('active');
+  activeMenu = el.classList.contains('active') ? id : null;
+}
+function closeAll() {
+  if(activeMenu) { document.getElementById(activeMenu).classList.remove('active'); activeMenu=null; }
+  Object.keys(subT).forEach(k => { clearTimeout(subT[k]); const el=document.getElementById(k); if(el) el.style.display='none'; });
+  urlGo('woundheir.com');
+}
+function closeAllPopups() {
+  document.querySelectorAll('.popup').forEach(p=>p.classList.remove('open'));
+  ['aboutPage','teletextGuidePage','asciiGuidePage'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.classList.remove('open');
+  });
+  activePopup=null;
+}
+function stopHelpTyping() {
+  if (helpTypingState && helpTypingState.finishCurrentWait) {
+    helpTypingState.finishCurrentWait();
+  }
+  helpTypingState = null;
+}
+async function runHelpTyping(container, lines) {
+  if (!container) return;
+  stopHelpTyping();
+  container.innerHTML = '';
+  const rnd = (a,b) => a + Math.random() * (b-a);
+  const state = { skipLine:false, finishCurrentWait:null, cancelled:false };
+  helpTypingState = state;
+  function wait(ms){
+    return new Promise(resolve => {
+      const t = setTimeout(() => { state.finishCurrentWait = null; resolve(); }, ms);
+      state.finishCurrentWait = () => { clearTimeout(t); state.finishCurrentWait = null; resolve(); };
+    });
+  }
+  for (let li=0; li<lines.length; li++) {
+    if (state.cancelled || helpTypingState !== state) return;
+    state.skipLine = false;
+    const line = document.createElement('div');
+    line.className = 'boot-line';
+    const span = document.createElement('span');
+    span.className = 'c';
+    span.style.display = 'inline';
+    line.appendChild(span);
+    container.appendChild(line);
+    const text = lines[li];
+    for (let i=0; i<text.length; i++) {
+      if (state.cancelled || helpTypingState !== state) return;
+      if (state.skipLine) { span.textContent = text; break; }
+      span.textContent += text[i];
+      await wait(rnd(18,50));
+    }
+    state.skipLine = false;
+    await wait(rnd(80,180));
+  }
+}
+function openAboutPage(e) {
+  if(e) e.stopPropagation();
+  closeAll();
+  closeAllPopups();
+  stopHelpTyping();
+  document.getElementById('aboutPage').classList.add('open');
+  activePopup='aboutPage';
+}
+function closeAboutPage() {
+  stopHelpTyping();
+  document.getElementById('aboutPage').classList.remove('open');
+  activePopup=null;
+  urlGo('woundheir.com');
+}
+function openTeletextGuidePage(e) {
+  if(e) e.stopPropagation();
+  closeAll();
+  closeAllPopups();
+  document.getElementById('teletextGuidePage').classList.add('open');
+  activePopup='teletextGuidePage';
+  runHelpTyping(document.getElementById('teletextGuideTyped'), ABOUT_TELETEXT_LINES);
+}
+function openAsciiGuidePage(e) {
+  if(e) e.stopPropagation();
+  closeAll();
+  closeAllPopups();
+  document.getElementById('asciiGuidePage').classList.add('open');
+  activePopup='asciiGuidePage';
+  runHelpTyping(document.getElementById('asciiGuideTyped'), ABOUT_ASCII_LINES);
+}
+function closeGuidePage() {
+  stopHelpTyping();
+  const t = document.getElementById('teletextGuidePage');
+  const a = document.getElementById('asciiGuidePage');
+  if (t) t.classList.remove('open');
+  if (a) a.classList.remove('open');
+  activePopup = null;
+  urlGo('woundheir.com');
+}
+function openUtility(id) { if(activeUtility) closeUtility(activeUtility); document.getElementById(id).classList.add('open'); activeUtility=id; urlGo('woundheir.com/utilities/'+id.replace('util','').toLowerCase()); }
+function closeUtility(id) { document.getElementById(id).classList.remove('open'); activeUtility=null; urlGo('woundheir.com'); }
+function urlGo(url) { const el=document.getElementById('urlText'); if(el) el.textContent='http://'+url; }
+function toggleFullscreen() { if(!document.fullscreenElement) document.documentElement.requestFullscreen(); else document.exitFullscreen(); closeAll(); }
+// ── TRANSLATIONS ─────────────────────────────────────────────────
+const LANGS = {
+  en: {
+    // Language names
+    langNames: {en:'English',it:'Italiano',fr:'Français',ja:'日本語'},
+    // Menu bar
+    mTerminal:'Terminal', mFile:'File', mView:'View', mRefresh:'Refresh',
+    mUtils:'Utilities', mSetup:'Setup', mHelp:'Help',
+    // File menu
+    fNewWindow:'New window', fOpen:'Open', fExit:'Exit',
+    // View menu
+    vDefault:'Default view', vFullscreen:'Fullscreen', vSource:'Source',
+    // Utilities menu
+    uTeletext:'▓ Teletext Converter', uAscii:'█ ASCII Art Generator',
+    // Setup menu
+    sLanguage:'Language', sReset:'Reset terminal to defaults',
+    // Help menu
+    hAbout:'About', hTeletextGuide:'Teletext Guide', hAsciiGuide:'ASCII Guide', hContact:'Contact',
+    // About page
+    aboutLine1:'woundheir — digital artist &amp; creative developer.',
+    aboutLine2:'Visuals — 2D games — music — experiments on the web and on-chain.',
+    aboutLine3:'Based on a cathode ray tube.',
+    aboutClose:'[ Close ]',
+    // Boot
+    boot1:'Initializing display... ', boot1s:'[OK]',
+    boot2:'Loading system... ',       boot2s:'[OK]',
+    boot3:'Checking memory.... ',     boot3s:'[CORRUPTED]',
+    boot4:'Loading graphics... ',     boot4s:'[OK]',
+    bootContinue:'Continue',
+    // Utility UI
+    uWidth:'WIDTH', uTheme:'THEME', uBg:'BG', uTitle:'TITLE',
+    uCharset:'CHARSET', uInvert:'INVERT',
+    uDrop:'▓▒░ DROP IMAGE HERE OR CLICK TO UPLOAD ░▒▓',
+    uCopy:'⊽ COPY', uPng:'↓ PNG', uCopyTxt:'⊽ COPY TXT',
+    uTxt:'↓ TXT', uImg:'↓ PNG',
+    // Grid labels
+    gTeletext:'TELETEXT', gAscii:'ASCII GENERATOR',
+    gX:'X', gObjkt:'OBJKT', gItch:'ITCH.IO',
+    gTeia:'TEIA', gArt:'ARTSTATION', gSound:'SOUNDCLOUD',
+    // Terminal menu
+    tFont:'── Font ──', tEffects:'── Effects ──',
+    tFontCourier:'Courier New (default)',
+    tScanlines:'Scanlines', tFlicker:'CRT Flicker', tGlitch:'Glitch',
+    tRgb:'RGB split', tBleed:'Pixel bleed', tNegative:'Negative', tPhosphor:'Phosphor burn', tVhs:'VHS tracking', tInterlace:'Interlace', tBarrel:'Barrel distort', tNoise:'Noise', tClose:'[ Close ]',
+    // Themes sections
+    thMono:'── Monochrome ──', thColor:'── Color schemes ──',
+    // Version
+    ver:'v1.5',
+  },
+  it: {
+    langNames: {en:'English',it:'Italiano',fr:'Français',ja:'日本語'},
+    mTerminal:'Terminale', mFile:'File', mView:'Visualizza', mRefresh:'Aggiorna',
+    mUtils:'Utilità', mSetup:'Impostazioni', mHelp:'Aiuto',
+    fNewWindow:'Nuova finestra', fOpen:'Apri', fExit:'Esci',
+    vDefault:'Vista predefinita', vFullscreen:'Schermo intero', vSource:'Sorgente',
+    uTeletext:'▓ Convertitore Teletext', uAscii:'█ Generatore ASCII',
+    sLanguage:'Lingua', sReset:'Ripristina impostazioni',
+    hAbout:'Informazioni', hTeletextGuide:'Guida Teletext', hAsciiGuide:'Guida ASCII', hContact:'Contatto',
+    aboutLine1:'woundheir — artista digitale &amp; sviluppatore creativo.',
+    aboutLine2:'Visual — giochi 2D — musica — esperimenti sul web e on-chain.',
+    aboutLine3:'Basato su un tubo a raggi catodici.',
+    aboutClose:'[ Chiudi ]',
+    boot1:'Inizializzazione display... ', boot1s:'[OK]',
+    boot2:'Caricamento sistema... ',      boot2s:'[OK]',
+    boot3:'Controllo memoria.... ',       boot3s:'[CORROTTO]',
+    boot4:'Caricamento grafica... ',      boot4s:'[OK]',
+    bootContinue:'Continua',
+    uWidth:'LARGH', uTheme:'TEMA', uBg:'SFONDO', uTitle:'TITOLO',
+    uCharset:'CHARSET', uInvert:'INVERTI',
+    uDrop:'▓▒░ TRASCINA QUI O CLICCA PER CARICARE ░▒▓',
+    uCopy:'⊽ COPIA', uPng:'↓ PNG', uCopyTxt:'⊽ COPIA TXT',
+    uTxt:'↓ TXT', uImg:'↓ PNG',
+    gTeletext:'TELETEXT', gAscii:'GENERATORE ASCII',
+    gX:'X', gObjkt:'OBJKT', gItch:'ITCH.IO',
+    gTeia:'TEIA', gArt:'ARTSTATION', gSound:'SOUNDCLOUD',
+    tFont:'── Font ──', tEffects:'── Effetti ──',
+    tFontCourier:'Courier New (predefinito)',
+    tScanlines:'Scanline', tFlicker:'Sfarfallio CRT', tGlitch:'Glitch',
+    tRgb:'Divisione RGB', tBleed:'Dissolvenza pixel', tNegative:'Negativo', tPhosphor:'Bruciatura fosforo', tVhs:'Tracciamento VHS', tInterlace:'Interlacciato', tBarrel:'Distorsione barile', tNoise:'Rumore', tClose:'[ Chiudi ]',
+    thMono:'── Monocromo ──', thColor:'── Combinazioni colore ──',
+    ver:'v1.5',
+  },
+  fr: {
+    langNames: {en:'English',it:'Italiano',fr:'Français',ja:'日本語'},
+    mTerminal:'Terminal', mFile:'Fichier', mView:'Affichage', mRefresh:'Actualiser',
+    mUtils:'Utilitaires', mSetup:'Configuration', mHelp:'Aide',
+    fNewWindow:'Nouvelle fenêtre', fOpen:'Ouvrir', fExit:'Quitter',
+    vDefault:'Vue par défaut', vFullscreen:'Plein écran', vSource:'Source',
+    uTeletext:'▓ Convertisseur Teletext', uAscii:'█ Générateur ASCII',
+    sLanguage:'Langue', sReset:'Réinitialiser le terminal',
+    hAbout:'À propos', hTeletextGuide:'Guide Teletext', hAsciiGuide:'Guide ASCII', hContact:'Contact',
+    aboutLine1:'woundheir — artiste numérique &amp; développeur créatif.',
+    aboutLine2:'Visuels — jeux 2D — musique — expériences sur le web et on-chain.',
+    aboutLine3:'Basé sur un tube cathodique.',
+    aboutClose:'[ Fermer ]',
+    boot1:'Initialisation affichage... ', boot1s:'[OK]',
+    boot2:'Chargement système... ',        boot2s:'[OK]',
+    boot3:'Vérification mémoire.... ',     boot3s:'[CORROMPU]',
+    boot4:'Chargement graphiques... ',     boot4s:'[OK]',
+    bootContinue:'Continuer',
+    uWidth:'LARG', uTheme:'THÈME', uBg:'FOND', uTitle:'TITRE',
+    uCharset:'CHARSET', uInvert:'INVERSER',
+    uDrop:'▓▒░ DÉPOSER UNE IMAGE OU CLIQUER POUR IMPORTER ░▒▓',
+    uCopy:'⊽ COPIER', uPng:'↓ PNG', uCopyTxt:'⊽ COPIER TXT',
+    uTxt:'↓ TXT', uImg:'↓ PNG',
+    gTeletext:'TELETEXT', gAscii:'GÉNÉRATEUR ASCII',
+    gX:'X', gObjkt:'OBJKT', gItch:'ITCH.IO',
+    gTeia:'TEIA', gArt:'ARTSTATION', gSound:'SOUNDCLOUD',
+    tFont:'── Police ──', tEffects:'── Effets ──',
+    tFontCourier:'Courier New (défaut)',
+    tScanlines:'Lignes de balayage', tFlicker:'Scintillement CRT', tGlitch:'Glitch',
+    tRgb:'Séparation RGB', tBleed:'Diffusion pixel', tNegative:'Négatif', tPhosphor:'Brûlure phosphore', tVhs:'Tracking VHS', tInterlace:'Entrelacé', tBarrel:'Distorsion barillet', tNoise:'Bruit', tClose:'[ Fermer ]',
+    thMono:'── Monochrome ──', thColor:'── Palettes de couleurs ──',
+    ver:'v1.5',
+  },
+  ja: {
+    langNames: {en:'English',it:'Italiano',fr:'Français',ja:'日本語'},
+    mTerminal:'ターミナル', mFile:'ファイル', mView:'ビュー', mRefresh:'リロード',
+    mUtils:'ツール', mSetup:'設定', mHelp:'ヘルプ',
+    fNewWindow:'新しいウィンドウ', fOpen:'開く', fExit:'終了',
+    vDefault:'デフォルトビュー', vFullscreen:'全画面', vSource:'ソース',
+    uTeletext:'▓ テレテキスト変換', uAscii:'█ アスキーアートジェネレーター',
+    sLanguage:'言語', sReset:'ターミナルをリセット',
+    hAbout:'概要', hTeletextGuide:'テレテキストガイド', hAsciiGuide:'ASCIIガイド', hContact:'コンタクト',
+    aboutLine1:'woundheir — デジタルアーティスト &amp; クリエイティブ開発者。',
+    aboutLine2:'ビジュアル — 2Dゲーム — 音楽 — ウェブとオンチェーンの実験。',
+    aboutLine3:'ブラウン管をベースに。',
+    aboutClose:'[ 閉じる ]',
+    boot1:'ディスプレイを初期化中... ', boot1s:'[OK]',
+    boot2:'システムを読み込み中... ',   boot2s:'[OK]',
+    boot3:'メモリを確認中.... ',        boot3s:'[破損]',
+    boot4:'グラフィックを読み込み中... ', boot4s:'[OK]',
+    bootContinue:'続行',
+    uWidth:'幅', uTheme:'テーマ', uBg:'背景', uTitle:'タイトル',
+    uCharset:'文字セット', uInvert:'反転',
+    uDrop:'▓▒░ ここに画像をドロップまたはクリック ░▒▓',
+    uCopy:'⊽ コピー', uPng:'↓ PNG', uCopyTxt:'⊽ テキストコピー',
+    uTxt:'↓ TXT', uImg:'↓ PNG',
+    gTeletext:'テレテキスト', gAscii:'アスキージェネレーター',
+    gX:'X', gObjkt:'OBJKT', gItch:'ITCH.IO',
+    gTeia:'TEIA', gArt:'ARTSTATION', gSound:'SOUNDCLOUD',
+    tFont:'── フォント ──', tEffects:'── エフェクト ──',
+    tFontCourier:'Courier New（デフォルト）',
+    tScanlines:'スキャンライン', tFlicker:'CRTフリッカー', tGlitch:'グリッチ',
+    tRgb:'RGB分割', tBleed:'ピクセルブリード', tNegative:'ネガ', tPhosphor:'燐光バーン', tVhs:'VHSトラッキング', tInterlace:'インターレース', tBarrel:'樽型歪み', tNoise:'ノイズ', tClose:'[ 閉じる ]',
+    thMono:'── モノクロ ──', thColor:'── カラースキーム ──',
+    ver:'v1.5',
+  }
+};
+
+let currentLang = 'en';
+
+function setLang(lang, e) {
+  if(e) e.stopPropagation();
+  currentLang = lang;
+  const t = LANGS[lang] || LANGS.en;
+  const langs = ['en','it','fr','ja'];
+
+  // Update language menu items
+  langs.forEach(l => {
+    const el = document.getElementById('lang-'+l);
+    if(el){ el.textContent = t.langNames[l] + (l===lang?' ✓':''); el.classList.toggle('active-lang', l===lang); }
+  });
+
+  // Menu bar labels
+  const set = (id, txt) => { const el=document.getElementById(id); if(el){ const first=el.firstElementChild; if(first) first.innerHTML=txt; } };
+  set('mTerminal', '<u>'+t.mTerminal[0]+'</u>'+t.mTerminal.slice(1));
+  set('mFile',     '<u>'+t.mFile[0]+'</u>'+t.mFile.slice(1));
+  set('mView',     '<u>'+t.mView[0]+'</u>'+t.mView.slice(1));
+  set('mRefresh',  '<u>'+t.mRefresh[0]+'</u>'+t.mRefresh.slice(1));
+  set('mUtils',    '<u>'+t.mUtils[0]+'</u>'+t.mUtils.slice(1));
+  set('mSetup',    '<u>'+t.mSetup[0]+'</u>'+t.mSetup.slice(1));
+  set('mHelp',     '<u>'+t.mHelp[0]+'</u>'+t.mHelp.slice(1));
+
+  // Helper to set text by data-i18n attribute
+  const ti = (key, txt) => document.querySelectorAll('[data-i18n="'+key+'"]').forEach(el => el.innerHTML = txt);
+  ti('fNewWindow', t.fNewWindow); ti('fOpen', t.fOpen); ti('fExit', t.fExit);
+  ti('vDefault', t.vDefault); ti('vFullscreen', t.vFullscreen); ti('vSource', t.vSource);
+  ti('uTeletext', t.uTeletext); ti('uAscii', t.uAscii);
+  ti('sLanguage', t.sLanguage); ti('sReset', t.sReset);
+  ti('hAbout', t.hAbout); ti('hTeletextGuide', t.hTeletextGuide); ti('hAsciiGuide', t.hAsciiGuide); ti('hContact', t.hContact);
+  ti('aboutLine1', t.aboutLine1); ti('aboutLine2', t.aboutLine2); ti('aboutLine3', t.aboutLine3);
+  ti('aboutClose', t.aboutClose);
+  ti('uDrop-tt', t.uDrop); ti('uDrop-ascii', t.uDrop);
+  ti('uWidth-tt', t.uWidth); ti('uWidth-ascii', t.uWidth);
+  ti('uTheme', t.uTheme); ti('uBg', t.uBg);
+  ti('uTitle-tt', t.uTitle); ti('uTitle-ascii', t.uTitle);
+  ti('uCharset', t.uCharset); ti('uInvert', t.uInvert);
+  ti('ttCopyBtn', t.uCopy); ti('ttDlBtn', t.uPng);
+  ti('asciiCopyBtn', t.uCopyTxt); ti('asciiDlTxt', t.uTxt); ti('asciiDlImg', t.uImg);
+  ti('tFont', t.tFont); ti('tEffects', t.tEffects);
+  ti('tFontCourier', t.tFontCourier);
+  ti('tScanlines', t.tScanlines); ti('tFlicker', t.tFlicker); ti('tGlitch', t.tGlitch);
+  ti('tRgb', t.tRgb); ti('tBleed', t.tBleed); ti('tClose', t.tClose);
+  ti('ver', t.ver);
+  // Grid labels
+  ti('gTeletext', t.gTeletext); ti('gAscii', t.gAscii);
+  ti('gX', t.gX); ti('gObjkt', t.gObjkt); ti('gItch', t.gItch);
+  ti('gTeia', t.gTeia); ti('gArt', t.gArt); ti('gSound', t.gSound);
+  // Theme section headers rebuilt
+  buildThemeMenu();
+  closeAll();
+}
+
+// ── SESSION TIMER ────────────────────────────────────────────────
+const sessionStart=Date.now();
+setInterval(()=>{const s=Math.floor((Date.now()-sessionStart)/1000),el=document.getElementById('sessionTimer');if(el)el.textContent='session '+String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');},1000);
+
+// ── TICKER ───────────────────────────────────────────────────────
+(function(){
+  const phrases=['<span class="ticker-malware">do not</span> look directly at the screen','signal lost','signal found','for better signal — use fullscreen','terminal customization — Terminal menu','a suspicious <span class="ticker-malware">malware</span> is detected','try live Teletext &amp; ASCII generators — Utilities','support the broadcast — collect on <span class="ticker-malware">Objkt</span>','KATOD — 2D <span class="ticker-malware">horror</span> game, playable in browser — katod-project.itch.io'];
+  // Fisher-Yates shuffle
+  const shuffled=[...phrases];
+  for(let i=shuffled.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[shuffled[i],shuffled[j]]=[shuffled[j],shuffled[i]];}
+  const sep='&nbsp;&nbsp;&#x26A1;&#xFE0E;&nbsp;&nbsp;';
+  // Single seamless text — span1 is the loop unit, span2 is identical clone for seamless wrap
+  const text=shuffled.join(sep)+sep;
+  const s1=document.getElementById('tickerSpan1'),s2=document.getElementById('tickerSpan2');
+  if(s1) s1.innerHTML=text;
+  if(s2) s2.innerHTML=text;
+  setTimeout(()=>{
+    const track=document.getElementById('tickerTrack'),span1=document.getElementById('tickerSpan1');
+    if(!track||!span1) return;
+    const loop=span1.offsetWidth; if(loop<=0) return;
+    let pos=0,last=performance.now();
+    const SPEED=60;
+    (function tick(now){
+      const dt=(now-last)/1000; last=now;
+      pos+=SPEED*dt;
+      if(pos>=loop) pos-=loop;
+      track.style.transform='translateX('+(-pos)+'px)';
+      requestAnimationFrame(tick);
+    })(performance.now());
+  },100);
+})();
+
+// ── BOOT ─────────────────────────────────────────────────────────
+(function(){
+  const bl=document.getElementById('bootLines'),grid=document.getElementById('portfolioGrid');
+  const rnd=(a,b)=>a+Math.random()*(b-a);
+  let skipLine=false, skipResolve=null;
+  // Each click either skips current line or (after all done) goes to grid
+  function wait(ms){
+    return new Promise(r=>{
+      const t=setTimeout(r,ms);
+      skipResolve=()=>{clearTimeout(t);r();};
+    });
+  }
+  function beep(f,d){try{const c=new(window.AudioContext||window.webkitAudioContext)(),t=c.currentTime,o=c.createOscillator(),g=c.createGain();o.type='square';o.frequency.value=f;g.gain.setValueAtTime(0.12,t);g.gain.linearRampToValueAtTime(0,t+(d||.06));o.connect(g);g.connect(c.destination);o.start(t);o.stop(t+(d||.07));}catch(e){}}
+  async function typeLine(text,statusText,statusClass){
+    skipLine=false;
+    const line=document.createElement('div');line.className='boot-line';
+    const span=document.createElement('span');span.className='c';span.style.display='inline';line.appendChild(span);bl.appendChild(line);
+    for(let i=0;i<text.length;i++){
+      if(skipLine){span.textContent=text;break;}
+      span.textContent+=text[i];
+      await wait(rnd(18,50));
+    }
+    if(statusText){const s=document.createElement('span');s.className=statusClass||'';s.textContent=statusText;line.appendChild(s);}
+    skipLine=false;
+    await wait(rnd(80,180));
+  }
+  function goGrid(){bl.style.transition='opacity .5s';bl.style.opacity='0';setTimeout(()=>{bl.style.display='none';grid.style.display='grid';},520);}
+  let done=false;
+  const bs=document.getElementById('bootScreen');
+  bs.style.cursor='pointer';
+  bs.addEventListener('click',function(){
+    if(done){goGrid();return;}
+    // Skip current line instantly
+    skipLine=true;
+    if(skipResolve){skipResolve();skipResolve=null;}
+  });
+  (async()=>{
+    const bt=LANGS[currentLang]||LANGS.en;
+    beep(800,.04); await typeLine(bt.boot1,bt.boot1s,'boot-status-ok');
+    beep(900,.03); await typeLine(bt.boot2,bt.boot2s,'boot-status-ok');
+    beep(600,.05); await typeLine(bt.boot3,bt.boot3s,'boot-status-corrupted');
+    beep(400,.08); await typeLine(bt.boot4,bt.boot4s,'boot-status-ok');
+    for(let i=0;i<3;i++){const e=document.createElement('div');e.className='boot-line';e.style.minHeight='1.35em';bl.appendChild(e);}
+    await typeLine(bt.bootContinue);
+    const last=bl.lastElementChild;
+    if(last){const cur=document.createElement('span');cur.className='boot-prompt-cursor';cur.textContent='\u258c';last.appendChild(cur);}
+    done=true;
+  })();
+})();
+
+// ── RANDOM INIT ──────────────────────────────────────────────────
+(function(){
+  const keys=Object.keys(THEMES);
+  setColor(keys[Math.floor(Math.random()*keys.length)]);
+  buildThemeMenu();
+  const term=document.getElementById('terminal');
+  const extras=[...['flicker','glitch','rgb','bleed']].sort(()=>Math.random()-.5).slice(0,1+Math.floor(Math.random()*2));
+  fx.scan=true; term.classList.add('scanlines-on');
+  // VHS tracking — random on/off each load
+  const vhsOn = Math.random() > 0.5;
+  fx.vhs = vhsOn; if(vhsOn) term.classList.add('vhs-on');
+  const optVhs = document.getElementById('opt-vhs'); if(optVhs) setFxLabel(optVhs, vhsOn);
+  extras.forEach(name=>{fx[name]=true;var cls=effectClass[name]||(name+'-on');term.classList.add(cls);var opt=document.getElementById('opt-'+name);if(opt)setFxLabel(opt,true);});
+})();
+
+// ── KEYBOARD ─────────────────────────────────────────────────────
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){
+    if(activeUtility){closeUtility(activeUtility);return;}
+    if(activePopup==='aboutPage'){closeAboutPage();return;}
+    if(activePopup==='teletextGuidePage' || activePopup==='asciiGuidePage'){closeGuidePage();return;}
+    closeAll();closeAllPopups();
+  }
+  if(e.ctrlKey&&e.key==='r'){e.preventDefault();location.reload();}
+  if(e.key==='F11'){e.preventDefault();toggleFullscreen();}
+});
+document.querySelectorAll('.popup').forEach(p=>p.addEventListener('click',e=>e.stopPropagation()));
+document.addEventListener('click',e=>{ if(activePopup==='aboutPage') return; closeAll();closeAllPopups(); });
+document.getElementById('aboutPage').addEventListener('click',function(e){
+  if(!helpTypingState) return;
+  const closeBtn = e.target.closest('.about-close');
+  if(closeBtn) return;
+  helpTypingState.skipLine = true;
+  if(helpTypingState.finishCurrentWait) helpTypingState.finishCurrentWait();
+});
+['teletextGuidePage','asciiGuidePage'].forEach(id => {
+  const page = document.getElementById(id);
+  if (!page) return;
+  page.addEventListener('click', function(e){
+    if(!helpTypingState) return;
+    if(e.target.closest('.about-close')) return;
+    helpTypingState.skipLine = true;
+    if(helpTypingState.finishCurrentWait) helpTypingState.finishCurrentWait();
+  });
+});
+
+// ════════════════════════════════════════════════════════════════
+// TELETEXT CONVERTER (image → P739-style block graphics)
+// ════════════════════════════════════════════════════════════════
+const TT_COLS=40, TT_CW=12, TT_CH=19;
+const TT_THEMES=[
+  {name:'TELETEXT',c:[[0,0,0],[187,0,0],[0,187,0],[187,187,0],[0,0,187],[187,0,187],[0,187,187],[187,187,187]]},
+  {name:'AMBER',   c:[[10,5,0],[60,20,0],[120,50,0],[180,90,0],[220,130,0],[240,170,20],[255,200,60],[255,230,140]]},
+  {name:'GREEN',   c:[[0,8,0],[0,30,0],[0,60,5],[0,100,10],[0,140,20],[0,180,30],[20,220,50],[120,255,130]]},
+  {name:'C64',     c:[[0,0,0],[104,55,43],[112,164,178],[111,61,134],[88,141,67],[53,40,121],[184,199,111],[67,57,0]]},
+  {name:'GAMEBOY', c:[[15,56,15],[48,98,48],[139,172,15],[155,188,15],[15,56,15],[48,98,48],[139,172,15],[155,188,15]]},
+  {name:'SYNTH',   c:[[10,0,20],[80,0,80],[150,0,150],[200,0,200],[0,200,255],[100,0,255],[255,0,100],[255,200,255]]},
+  {name:'SEPIA',   c:[[20,12,5],[60,35,15],[100,65,30],[145,100,55],[180,140,90],[210,175,130],[235,210,175],[255,240,220]]},
+  {name:'MATRIX',  c:[[0,0,0],[0,20,0],[0,50,0],[0,100,0],[0,150,0],[0,200,0],[50,255,50],[180,255,180]]},
+  {name:'NEON',    c:[[5,0,15],[255,0,80],[0,255,200],[255,220,0],[0,100,255],[180,0,255],[255,100,0],[255,255,255]]},
+  {name:'ICE',     c:[[0,10,30],[0,40,80],[0,80,140],[20,120,180],[60,160,220],[120,200,255],[180,230,255],[240,250,255]]},
+  {name:'INFERNO', c:[[0,0,0],[40,0,0],[100,0,0],[180,20,0],[220,80,0],[240,150,0],[255,220,50],[255,255,200]]},
+  {name:'PASTEL',  c:[[255,255,255],[255,180,180],[180,255,180],[255,255,180],[180,200,255],[255,180,255],[180,240,255],[220,220,220]]},
+];
+let ttPal=TT_THEMES[0].c, ttTi=0, ttBi=0, ttImg=null, ttTimer=null;
+
+let ttEl = null;
+function ttSetupDropTarget(el) {
+  if (!el) return;
+  el.addEventListener('dragover', function(e) { e.preventDefault(); e.stopPropagation(); el.classList.add('dragover'); });
+  el.addEventListener('dragleave', function() { el.classList.remove('dragover'); });
+  el.addEventListener('drop', function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    el.classList.remove('dragover');
+    const f = e.dataTransfer.files[0];
+    if (f && f.type.startsWith('image/')) ttLoad(f);
+  });
+}
+function getTtEl() {
+  if (!ttEl) {
+    ttEl = {
+      widthInput: document.getElementById('ttWidth'),
+      srcCanvas: document.getElementById('ttSrcCanvas'),
+      outCanvas: document.getElementById('ttOutCanvas'),
+      placeholder: document.getElementById('ttPlaceholder'),
+      workspace: document.getElementById('ttWorkspace'),
+      dropzone: document.getElementById('ttDropzone'),
+      status: document.getElementById('ttStatus'),
+      titleInput: document.getElementById('ttTitleInput'),
+      dlBtn: document.getElementById('ttDlBtn'),
+      copyBtn: document.getElementById('ttCopyBtn'),
+    };
+    ttSetupDropTarget(ttEl.workspace);
+  }
+  return ttEl;
+}
+
+// Build theme dots
+(function(){
+  const row=document.getElementById('ttThemeRow'); if(!row) return;
+  TT_THEMES.forEach((t,i)=>{
+    const d=document.createElement('div'); d.className='tt-theme-dot'+(i===0?' active':'');
+    const c=t.c[Math.floor(t.c.length*.6)]; d.style.background='rgb('+c[0]+','+c[1]+','+c[2]+')'; d.title=t.name;
+    d.onclick=()=>{ttTi=i;ttPal=TT_THEMES[i].c;ttBi=0;document.querySelectorAll('.tt-theme-dot').forEach((x,j)=>x.classList.toggle('active',j===i));buildTtBg();ttSchedule();};
+    row.appendChild(d);
+  });
+})();
+
+function buildTtBg(){
+  const row=document.getElementById('ttBgRow'); if(!row) return; row.innerHTML='';
+  ttPal.forEach(([r,g,b],i)=>{
+    const d=document.createElement('div'); d.className='tt-bg-dot'+(i===ttBi?' active':'');
+    d.style.background='rgb('+r+','+g+','+b+')';
+    d.onclick=()=>{ttBi=i;document.querySelectorAll('.tt-bg-dot').forEach((x,j)=>x.classList.toggle('active',j===i));ttSchedule();};
+    row.appendChild(d);
+  });
+}
+buildTtBg();
+
+(function() {
+  const ttDz = document.getElementById('ttDropzone');
+  ttSetupDropTarget(ttDz);
+})();
+
+function ttHandleFile(inp) { if (inp.files[0]) ttLoad(inp.files[0], inp); }
+function ttLoad(f, inp) {
+  const r = new FileReader();
+  r.onload = function(ev) {
+    ttImg = ev.target.result;
+    const el = getTtEl();
+    el.dropzone.style.display = 'none';
+    el.workspace.style.display = 'flex';
+    el.workspace.classList.add('tt-has-result');
+    el.placeholder.style.display = 'none';
+    if (inp && inp.value !== undefined) inp.value = '';
+    ttProcess();
+  };
+  r.readAsDataURL(f);
+}
+function ttSchedule(){clearTimeout(ttTimer);ttTimer=setTimeout(ttProcess,280);}
+
+function ttNearest(r, g, b) {
+  let best = 0, bd = Infinity;
+  for (let i = 0; i < ttPal.length; i++) {
+    const c = ttPal[i];
+    const d = (r - c[0]) ** 2 + (g - c[1]) ** 2 + (b - c[2]) ** 2;
+    if (d < bd) { bd = d; best = i; }
+  }
+  return best;
+}
+
+function ttProcess() {
+  if (!ttImg) return;
+  const img = new Image();
+  img.onload = () => {
+    const el = getTtEl();
+    const COLS = Math.max(24, Math.min(80, parseInt(el.widthInput.value, 10) || 40));
+    const ROWS = Math.max(4, Math.round((COLS * TT_CW * img.height) / (img.width * TT_CH)));
+    const W = COLS * TT_CW, H = ROWS * TT_CH;
+    const sw = img.width, sh = img.height, sW = TT_CW / 2, sH = TT_CH / 3;
+    const sc = el.srcCanvas;
+    sc.width = img.width; sc.height = img.height;
+    sc.getContext('2d').drawImage(img, 0, 0);
+    const src = sc.getContext('2d').getImageData(0, 0, img.width, img.height);
+    const data = src.data;
+    const oc = el.outCanvas;
+    oc.width = W; oc.height = H;
+    const ctx = oc.getContext('2d');
+    const [br, bg, bb] = ttPal[ttBi];
+    ctx.fillStyle = 'rgb(' + br + ',' + bg + ',' + bb + ')';
+    ctx.fillRect(0, 0, W, H);
+    for (let row = 0; row < ROWS; row++) {
+      for (let col = 0; col < COLS; col++) {
+        const subs = [];
+        for (let sr = 0; sr < 3; sr++)
+          for (let sc2 = 0; sc2 < 2; sc2++) {
+            const px = ((col * 2 + sc2 + 0.5) / (COLS * 2)) * sw;
+            const py = ((row * 3 + sr + 0.5) / (ROWS * 3)) * sh;
+            const ix = Math.min(Math.floor(px), sw - 1);
+            const iy = Math.min(Math.floor(py), sh - 1);
+            const id2 = (iy * sw + ix) * 4;
+            subs.push(ttNearest(data[id2], data[id2 + 1], data[id2 + 2]));
+          }
+        const freq = new Array(ttPal.length).fill(0);
+        for (let k = 0; k < 6; k++) freq[subs[k]]++;
+        freq[ttBi] = -1;
+        let fgi = 0;
+        for (let k = 1; k < ttPal.length; k++) if (freq[k] > freq[fgi]) fgi = k;
+        for (let sr = 0; sr < 3; sr++)
+          for (let sc2 = 0; sc2 < 2; sc2++) {
+            const c = subs[sr * 2 + sc2];
+            const use = (c === fgi) ? fgi : ttBi;
+            const [r, g, b] = ttPal[use];
+            ctx.fillStyle = 'rgb(' + r + ',' + g + ',' + b + ')';
+            ctx.fillRect(col * TT_CW + sc2 * sW, row * TT_CH + sr * sH, sW, sH);
+          }
+      }
+    }
+    ctx.fillStyle = 'rgba(0,0,0,.18)';
+    for (let y = 0; y < H; y += 2) ctx.fillRect(0, y, W, 1);
+    el.placeholder.style.display = 'none';
+    oc.style.display = 'block';
+    var panelW = el.workspace.clientWidth - 32, panelH = el.workspace.clientHeight - 32;
+    var scale = Math.min(panelW / W, panelH / H);
+    oc.style.width = (W * scale) + 'px';
+    oc.style.height = (H * scale) + 'px';
+    el.dlBtn.style.display = 'inline-block';
+    el.copyBtn.style.display = 'inline-block';
+    el.status.textContent = '\u2713  ' + TT_THEMES[ttTi].name + ' \u2014 ' + COLS + '\xd7' + ROWS + ' CELLS \u2014 ' + W + '\xd7' + H + 'px';
+  };
+  img.src = ttImg;
+}
+
+function ttDownload() {
+  const el = getTtEl();
+  const oc = el.outCanvas;
+  if (!oc || oc.style.display === 'none') return;
+  const base = (el.titleInput.value.trim() || 'woundheir').replace(/[\s\/\\:*?"<>|]+/g, '_');
+  const a = document.createElement('a');
+  a.download = base + '_teletext_' + TT_THEMES[ttTi].name.toLowerCase() + '.png';
+  a.href = oc.toDataURL('image/png');
+  a.click();
+}
+async function ttCopy() {
+  const oc = getTtEl().outCanvas;
+  if (!oc || oc.style.display === 'none') return;
+  oc.toBlob(async (b) => {
+    try {
+      await navigator.clipboard.write([new ClipboardItem({ 'image/png': b })]);
+      getTtEl().status.textContent = '\u2713  COPIED';
+    } catch (e) {
+      getTtEl().status.textContent = '\u2717  CLIPBOARD DENIED';
+    }
+  });
+}
+
+// ════════════════════════════════════════════════════════════════
+// ASCII ART GENERATOR (image → character art)
+// ════════════════════════════════════════════════════════════════
+const ASCII_SETS = {
+  detailed: " .'`^\",:;Il!i><~+_-?][}{1)(|\\/tfjrxnuvczXYUJCLQ0OZmwqpdbkhao*#MW&8%B@$",
+  blocks:  ' \u2591\u2592\u2593\u2588',
+  minimal: ' .:+|#',
+  numbers: ' 123456789',
+  binary:  ' 01'
+};
+let asciiImg = null, asciiTimer = null;
+
+const ASCII_CELL_W = 7, ASCII_CELL_H = 12;
+
+let asciiEl = null;
+function getAsciiEl() {
+  if (!asciiEl) {
+    asciiEl = {
+    charset: document.getElementById('asciiCharset'),
+    width: document.getElementById('asciiWidth'),
+    invert: document.getElementById('asciiInvert'),
+    titleInput: document.getElementById('asciiTitleInput'),
+      srcCanvas: document.getElementById('asciiSrcCanvas'),
+      output: document.getElementById('asciiOutput'),
+      outputWrap: document.querySelector('#utilAscii .ascii-output-wrap'),
+      workspace: document.getElementById('asciiWorkspace'),
+      dropzone: document.getElementById('asciiDropzone'),
+      status: document.getElementById('asciiStatus'),
+      fileInput: document.getElementById('asciiFileInput'),
+      copyBtn: document.getElementById('asciiCopyBtn'),
+      dlTxt: document.getElementById('asciiDlTxt'),
+      dlImg: document.getElementById('asciiDlImg'),
+    };
+    asciiSetupDropTarget(asciiEl.workspace);
+  }
+  return asciiEl;
+}
+
+function asciiSetupDropTarget(el) {
+  if (!el) return;
+  el.addEventListener('dragover', (e) => { e.preventDefault(); e.stopPropagation(); el.classList.add('dragover'); });
+  el.addEventListener('dragleave', () => el.classList.remove('dragover'));
+  el.addEventListener('drop', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    el.classList.remove('dragover');
+    const f = e.dataTransfer.files[0];
+    if (f && f.type.startsWith('image/')) asciiLoad(f);
+  });
+}
+const asciiDz = document.getElementById('asciiDropzone');
+asciiSetupDropTarget(asciiDz);
+
+function asciiHandleFile(inp){if(inp.files[0])asciiLoad(inp.files[0]);}
+function asciiLoad(f) {
+  const r = new FileReader();
+  r.onload = (ev) => {
+    asciiImg = ev.target.result;
+    const el = getAsciiEl();
+    el.dropzone.style.display = 'none';
+    el.workspace.style.display = 'flex';
+    el.workspace.classList.add('ascii-has-result');
+    if (el.fileInput) el.fileInput.value = '';
+    asciiProcess();
+  };
+  r.readAsDataURL(f);
+}
+function asciiSchedule() { clearTimeout(asciiTimer); asciiTimer = setTimeout(asciiProcess, 300); }
+
+function asciiProcess() {
+  if (!asciiImg) return;
+  const img = new Image();
+  img.onload = () => {
+    const el = getAsciiEl();
+    const chars = ASCII_SETS[el.charset.value] || ASCII_SETS.detailed;
+    const inv = el.invert.checked;
+    const cols = parseInt(el.width.value, 10) || 100;
+    const charLen = chars.length;
+    // Match original photo aspect ratio: (cols * ASCII_CELL_W) / (rows * ASCII_CELL_H) === img.width / img.height
+    const rows = Math.max(1, Math.round(cols * (ASCII_CELL_W / ASCII_CELL_H) * (img.height / img.width)));
+    const sc = el.srcCanvas;
+    sc.width = cols; sc.height = rows;
+    sc.getContext('2d').drawImage(img, 0, 0, cols, rows);
+    const data = sc.getContext('2d').getImageData(0, 0, cols, rows).data;
+    const lines = [];
+    for (let y = 0; y < rows; y++) {
+      let line = '';
+      for (let x = 0; x < cols; x++) {
+        const i = (y * cols + x) * 4;
+        const lum = (data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114) / 255;
+        const v = inv ? 1 - lum : lum;
+        line += chars[Math.min(Math.floor(v * (charLen - 1)), charLen - 1)];
+      }
+      lines.push(line);
+    }
+    asciiTxt = lines.join('\n');
+    if (el.fileInput) el.fileInput.value = '';
+    el.copyBtn.style.display = 'inline-block';
+    el.dlTxt.style.display = 'inline-block';
+    el.dlImg.style.display = 'inline-block';
+    const panel = el.workspace;
+    const panelW = panel.clientWidth - 32, panelH = panel.clientHeight - 32;
+    const lineHeightRatio = (ASCII_CELL_H / ASCII_CELL_W) * 0.6;
+    const fsByW = panelW / (cols * 0.6);
+    const fsByH = panelH / (rows * lineHeightRatio);
+    const fs = Math.max(4, Math.min(fsByW, fsByH));
+    el.output.style.fontSize = fs + 'px';
+    el.output.style.lineHeight = lineHeightRatio.toFixed(3);
+    el.output.style.letterSpacing = '0';
+    el.output.textContent = asciiTxt;
+    const themeName = THEME_LABELS[currentTheme] || currentTheme.toUpperCase();
+    el.status.textContent = '\u2713  ' + cols + '\xd7' + rows + ' \u2014 ' + el.charset.value.toUpperCase() + ' \u2014 palette: ' + themeName.toUpperCase();
+    const tl = document.getElementById('asciiThemeLabel'); if(tl) tl.textContent = themeName.toUpperCase();
+  };
+  img.src = asciiImg;
+}
+
+async function asciiCopy() {
+  if (!asciiTxt) return;
+  try {
+    await navigator.clipboard.writeText(asciiTxt);
+    getAsciiEl().status.textContent = '\u2713  TEXT COPIED';
+  } catch (e) {
+    getAsciiEl().status.textContent = '\u2717  DENIED';
+  }
+}
+function asciiDownloadTxt() {
+  if (!asciiTxt) return;
+  const base = (getAsciiEl().titleInput.value.trim() || 'woundheir').replace(/[\s\/\\:*?"<>|]+/g, '_');
+  const a = document.createElement('a');
+  a.download = base + '_ascii.txt';
+  a.href = URL.createObjectURL(new Blob([asciiTxt], { type: 'text/plain' }));
+  a.click();
+}
+function asciiDownloadImg() {
+  if (!asciiTxt) return;
+  const lines = asciiTxt.split('\n');
+  const cols = lines[0] ? lines[0].length : 80, rows = lines.length;
+  const cw = ASCII_CELL_W, ch = ASCII_CELL_H;
+  const cv = document.createElement('canvas');
+  cv.width = cols * cw;
+  cv.height = rows * ch;
+  const ctx = cv.getContext('2d');
+  const root = document.documentElement;
+  const bg = (getComputedStyle(root).getPropertyValue('--bg').trim() || '#000000');
+  const green = (getComputedStyle(root).getPropertyValue('--green').trim() || '#00FFFF');
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, cv.width, cv.height);
+  ctx.fillStyle = green;
+  ctx.font = ch + "px 'Courier New', monospace";
+  ctx.textBaseline = 'top';
+  ctx.shadowColor = green;
+  ctx.shadowBlur = 1;
+  for (let y = 0; y < rows; y++) ctx.fillText(lines[y], 0, y * ch);
+  const base = (getAsciiEl().titleInput.value.trim() || 'woundheir').replace(/[\s\/\\:*?"<>|]+/g, '_');
+  const a = document.createElement('a');
+  a.download = base + '_ascii.png';
+  a.href = cv.toDataURL('image/png');
+  a.click();
+}
+
+// ── CUSTOM CURSOR ─────────────────────────────────────────────────
+(function(){
+  const cur = document.getElementById('customCursor');
+  if (!cur) return;
+  document.addEventListener('mousemove', e => {
+    cur.style.left = e.clientX + 'px';
+    cur.style.top  = e.clientY + 'px';
+  });
+  document.addEventListener('mouseleave', () => { cur.style.opacity = '0'; });
+  document.addEventListener('mouseenter', () => { cur.style.opacity = '1'; });
+})();
+
 </script>
-
 </body>
 </html>
