@@ -925,7 +925,7 @@ setInterval(()=>{const s=Math.floor((Date.now()-sessionStart)/1000),el=document.
 
 // ── TICKER ───────────────────────────────────────────────────────
 (function(){
-  const phrases=['<span class="ticker-malware">do not</span> look directly at the screen','signal lost','signal found','for better signal — use fullscreen','terminal customization — Terminal menu','a suspicious <span class="ticker-malware">malware</span> is detected','try live Teletext &amp; ASCII generators — Utilities','support the broadcast — collect on <span class="ticker-malware">Objkt</span>','KATOD — 2D <span class="ticker-malware">horror</span> game, playable in browser — katod-project.itch.io'];
+  const phrases=['<span class="ticker-malware">do not</span> look directly at the screen','signal lost','signal found','for better signal — use fullscreen','terminal customization — Terminal menu','a suspicious <span class="ticker-malware">malware</span> is detected','try live Teletext &amp; ASCII generators — Utilities','support the broadcast — collect on <span class="ticker-malware">Objkt</span>','KATOD — 2D <span class="ticker-malware">horror</span> game, playable in browser — katod-project.itch.io','Enjoyed the terminal? A <span class="ticker-malware">donate</span> keeps it alive.'];
   // Fisher-Yates shuffle
   const shuffled=[...phrases];
   for(let i=shuffled.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[shuffled[i],shuffled[j]]=[shuffled[j],shuffled[i]];}
