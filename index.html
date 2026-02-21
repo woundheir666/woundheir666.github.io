@@ -15,12 +15,13 @@ body { background:#000; display:flex; align-items:center; justify-content:center
 .terminal { width:96vw; max-width:1200px; min-height:92vh; background:var(--bg); color:var(--green); font-size:23px; line-height:1.35; text-shadow:0 0 3px var(--green); display:flex; flex-direction:column; position:relative; overflow:hidden; }
 .terminal.scanlines-on .content::before { content:""; position:absolute; inset:0; pointer-events:none; background-image:repeating-linear-gradient(to bottom,rgba(0,0,0,.35) 0px,rgba(0,0,0,.35) 1px,rgba(0,0,0,0) 1.5px,rgba(0,0,0,0) 3px); mix-blend-mode:multiply; z-index:2; }
 .terminal.scanlines-on .url-bar::before,.terminal.scanlines-on .ticker-bar::before { content:""; position:absolute; inset:0; pointer-events:none; background-image:repeating-linear-gradient(to bottom,rgba(0,0,0,.35) 0px,rgba(0,0,0,.35) 1px,rgba(0,0,0,0) 1.5px,rgba(0,0,0,0) 3px); mix-blend-mode:multiply; z-index:1; }
-.terminal.flicker-on::before { content:""; position:absolute; inset:0; pointer-events:none; z-index:998; animation:crt-flicker .12s infinite; }
-@keyframes crt-flicker { 0%{opacity:.88;background:rgba(0,0,0,.08)} 25%{opacity:.95;background:rgba(0,0,0,.03)} 50%{opacity:1;background:transparent} 75%{opacity:.92;background:rgba(0,0,0,.05)} 100%{opacity:.87;background:rgba(0,0,0,.09)} }
+.terminal.flicker-on::after { content:""; position:absolute; inset:0; pointer-events:none; z-index:999; animation:crt-flicker .12s infinite; }
+@keyframes crt-flicker { 0%{opacity:.97;background:rgba(0,0,0,.02)} 50%{opacity:1;background:transparent} 100%{opacity:.96;background:rgba(0,0,0,.015)} }
 .terminal.glitch-on { animation:glitch 6s infinite; }
 @keyframes glitch { 0%,96%,100%{transform:none;clip-path:none} 96.5%{transform:translateX(-3px);clip-path:inset(15% 0 70% 0)} 97%{transform:translateX(4px);clip-path:inset(55% 0 20% 0)} 97.5%{transform:translateX(-2px);clip-path:inset(80% 0 5% 0)} 98%{transform:translateX(2px);clip-path:none} }
 .terminal.rgb-on .content,.terminal.rgb-on .boot-screen,.terminal.rgb-on .menu-bar,.terminal.rgb-on .ticker-bar,.terminal.rgb-on .url-bar { text-shadow:-2px 0 rgba(255,0,0,.5),2px 0 rgba(0,255,255,.5),0 0 3px var(--green); }
 .terminal.bleed-on .content,.terminal.bleed-on .boot-screen,.terminal.bleed-on .menu-bar,.terminal.bleed-on .url-bar { filter:blur(.3px) contrast(1.4); letter-spacing:.5px; }
+
 
 /* VHS TRACKING */
 .terminal.vhs-on::after { content:""; position:absolute; inset:0; pointer-events:none; z-index:997; animation:vhs-track 4s linear infinite; background:repeating-linear-gradient(to bottom,transparent 0px,transparent 60px,rgba(255,255,255,.03) 60px,rgba(255,255,255,.03) 62px); }
@@ -30,19 +31,19 @@ body { background:#000; display:flex; align-items:center; justify-content:center
 
 
 /* MENU */
-.menu-bar { display:flex; align-items:center; height:var(--bar-height); background:var(--accent1); color:#000; text-shadow:none; font-size:21px; padding:0 6px; position:relative; z-index:100; user-select:none; flex-shrink:0; }
+.menu-bar { display:flex; align-items:center; height:var(--bar-height); background:var(--accent1); color:#000; text-shadow:none; font-size:21px; padding:0 6px; position:relative; z-index:1100; user-select:none; flex-shrink:0; }
 .menu-items { display:flex; flex:1; min-width:0; }
 .menu-item { padding:0 16px 0 6px; cursor:pointer; position:relative; }
 .menu-item u { text-decoration:underline; }
 .menu-item.active { background:var(--chrome-head-bg,#000080); color:var(--chrome-head-fg,#fff); text-shadow:none; }
-.dropdown { display:none; position:absolute; top:100%; left:0; background:var(--chrome-bg,var(--accent1)); color:#000; text-shadow:none; min-width:220px; z-index:500; border:2px solid var(--chrome-head-bg,#000); font-size:21px; overflow:visible; }
+.dropdown { display:none; position:absolute; top:100%; left:0; background:var(--chrome-bg,var(--accent1)); color:#000; text-shadow:none; min-width:220px; z-index:1200; border:2px solid var(--chrome-head-bg,#000); font-size:21px; overflow:visible; }
 .menu-item.active .dropdown { display:block; }
 .terminal.scanlines-on .menu-item.active .dropdown::before { content:""; position:absolute; inset:0; pointer-events:none; background-image:repeating-linear-gradient(to bottom,rgba(0,0,0,.1) 0px,rgba(0,0,0,.1) 1px,rgba(0,0,0,0) 1.5px,rgba(0,0,0,0) 3px); mix-blend-mode:multiply; }
 .dd-item { padding:2px 14px 2px 10px; cursor:pointer; display:flex; justify-content:space-between; white-space:nowrap; color:#000; }
 .dd-item:hover,.dd-item.hl { background:var(--chrome-head-bg,#000080); color:var(--chrome-head-fg,#fff); text-shadow:none; }
 .dd-sep { border-top:1px solid #000; margin:2px 0; opacity:.4; }
 .has-sub { position:relative; }
-.submenu { display:none; position:absolute; top:0; left:calc(100% - 1px); background:var(--chrome-bg,var(--accent1)); color:#000; text-shadow:none; min-width:160px; border:2px solid var(--chrome-head-bg,#000); z-index:700; font-size:21px; }
+.submenu { display:none; position:absolute; top:0; left:calc(100% - 1px); background:var(--chrome-bg,var(--accent1)); color:#000; text-shadow:none; min-width:160px; border:2px solid var(--chrome-head-bg,#000); z-index:1300; font-size:21px; }
 .has-sub:hover .submenu,.submenu:hover { display:block; }
 .sub-item { padding:2px 14px 2px 10px; cursor:pointer; white-space:nowrap; color:#000; }
 .sub-item:hover,.sub-item.active-lang { background:var(--chrome-head-bg,#000080); color:var(--chrome-head-fg,#fff); text-shadow:none; }
@@ -94,20 +95,19 @@ body { background:#000; display:flex; align-items:center; justify-content:center
 .p-tile:hover .p-label { color:var(--chrome-head-fg,var(--green)); background:var(--chrome-head-bg,#000080); }
 
 /* ABOUT */
-.about-page { position:absolute; inset:0; z-index:1000; background:var(--bg); color:var(--green); text-shadow:0 0 3px var(--green); padding:16px 20px; overflow:hidden; font-size:20px; line-height:1.4; display:none; }
-.about-page.open { display:block; }
-.about-shell { height:100%; display:flex; flex-direction:column; gap:12px; }
-.about-body { flex:1; min-height:0; border:1px solid var(--green); padding:14px; overflow:auto; display:flex; align-items:center; justify-content:center; }
-.about-artist { display:flex; flex-direction:column; align-items:center; justify-content:center; width:100%; gap:14px; }
-.about-portrait-wrap { width:100%; display:flex; justify-content:center; align-items:center; overflow:visible; }
-.about-portrait { margin:0 auto; padding-top:2px; width:max-content; font-family:'Courier New',monospace; font-size:6.5px; line-height:.95; letter-spacing:0; white-space:pre; text-align:left; display:block; }
-.about-artist-bio { width:100%; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; text-align:center; gap:6px; }
-.about-artist-bio p { margin:0; max-width:none; white-space:nowrap; }
+.about-page { position:absolute; inset:0; z-index:1100; background:var(--bg); color:var(--green); text-shadow:0 0 3px var(--green); padding:16px 20px; font-size:20px; line-height:1.4; display:none; flex-direction:column; gap:12px; }
+.about-page.open { display:flex; }
+.about-shell { flex:1; display:flex; flex-direction:column; gap:12px; min-height:0; }
+.about-body { flex:1; border:1px solid var(--green); overflow:auto; display:flex; align-items:center; justify-content:center; padding:14px; }
+.about-artist { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px; }
+.about-portrait-wrap { display:flex; justify-content:center; }
+.about-artist-bio { display:flex; flex-direction:column; align-items:center; text-align:center; gap:6px; }
+.about-artist-bio p { margin:0; }
 .about-close { cursor:pointer; display:inline-block; padding:4px 12px; border:1px solid var(--green); align-self:flex-start; }
 .about-close:hover { background:var(--green); color:var(--bg); text-shadow:none; }
 
 /* HELP GUIDE PAGES */
-.help-guide-page { position:absolute; inset:0; z-index:1000; background:var(--bg); color:var(--green); text-shadow:0 0 3px var(--green); padding:16px 20px; overflow:hidden; font-size:20px; line-height:1.4; display:none; }
+.help-guide-page { position:absolute; inset:0; z-index:1100; background:var(--bg); color:var(--green); text-shadow:0 0 3px var(--green); padding:16px 20px; overflow:hidden; font-size:20px; line-height:1.4; display:none; }
 .help-guide-page.open { display:block; }
 .help-guide-shell { height:100%; display:flex; flex-direction:column; gap:12px; }
 .help-guide-title { font-size:18px; letter-spacing:2px; border:1px solid var(--green); padding:5px 10px; width:fit-content; }
@@ -116,7 +116,7 @@ body { background:#000; display:flex; align-items:center; justify-content:center
 .help-guide-typed .boot-line { min-height:1.35em; }
 
 /* ═══ UTILITIES (Image converters: Teletext, ASCII) ═══ */
-.utility-overlay { position:absolute; inset:0; z-index:1000; background:var(--bg); color:var(--green); text-shadow:0 0 3px var(--green); display:none; flex-direction:column; overflow:hidden; font-family:'Courier New',monospace; }
+.utility-overlay { position:absolute; inset:0; z-index:20; background:var(--bg); color:var(--green); text-shadow:0 0 3px var(--green); display:none; flex-direction:column; overflow:hidden; font-family:'Courier New',monospace; }
 .utility-overlay.open { display:flex; }
 .util-titlebar { background:var(--chrome-head-bg,#000); color:var(--chrome-head-fg,var(--green)); text-shadow:0 0 4px var(--chrome-head-fg,var(--green)); font-size:18px; padding:3px 10px; display:flex; justify-content:space-between; align-items:center; flex-shrink:0; user-select:none; letter-spacing:2px; }
 .util-close-btn { cursor:pointer; padding:1px 8px; border:1px solid var(--chrome-head-fg,var(--green)); font-size:15px; }
@@ -131,6 +131,7 @@ body { background:#000; display:flex; align-items:center; justify-content:center
 .util-btn-copy { background:var(--bg); color:var(--green); border:1px solid var(--green); }
 .util-spacer { flex:1; }
 .util-dropzone { border:2px dashed var(--green); color:var(--green); text-align:center; padding:12px; cursor:pointer; font-size:13px; letter-spacing:2px; transition:background .2s; margin:8px 12px; flex-shrink:0; }
+.util-dropzone:hover,.util-dropzone.dragover { }
 .util-workspace { flex:1; display:flex; overflow:hidden; position:relative; }
 .util-statusbar { background:var(--chrome-bg,var(--accent1)); color:#000; text-shadow:none; font-size:13px; padding:2px 10px; flex-shrink:0; border-top:2px solid var(--chrome-head-bg,#000); letter-spacing:1px; min-height:20px; }
 
@@ -230,6 +231,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
             </div>
           </div>
           <div class="dd-sep"></div>
+          <div class="dd-sep"></div>
           <div class="dd-item" onclick="closeAll();window.close()" data-i18n="fExit">Exit</div>
         </div>
       </div>
@@ -281,6 +283,19 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
           <div class="dd-item" onclick="openTeletextGuidePage(event)" data-i18n="hTeletextGuide">Teletext Guide</div>
           <div class="dd-item" onclick="openAsciiGuidePage(event)" data-i18n="hAsciiGuide">ASCII Guide</div>
           <div class="dd-sep"></div>
+          <div class="dd-item has-sub" onmouseenter="showSub('linksSub')" onmouseleave="hideSub('linksSub')">
+            <span data-i18n="hLinks">Links</span><span>&#8250;</span>
+            <div class="submenu" id="linksSub" onmouseenter="showSub('linksSub')" onmouseleave="hideSub('linksSub')">
+              <div class="sub-item" onclick="closeAll();window.open('https://x.com/woundheir__','_blank')">X</div>
+              <div class="sub-item" onclick="closeAll();window.open('https://objkt.com/users/tz1ZsKoaQgjZegNKE7P9Rn9DyUtetFvdJQcm','_blank')">Objkt</div>
+              <div class="sub-item" onclick="closeAll();window.open('https://katod-project.itch.io/','_blank')">Itch.io</div>
+              <div class="sub-item" onclick="closeAll();window.open('https://teia.art/woundheir','_blank')">Teia</div>
+              <div class="sub-item" onclick="closeAll();window.open('https://www.artstation.com/woundheir','_blank')">Artstation</div>
+              <div class="sub-item" onclick="closeAll();window.open('https://soundcloud.com/woundheir','_blank')">Soundcloud</div>
+              <div class="sub-item" onclick="closeAll();window.open('https://linkedin.com/in/omidrasipour/','_blank')">LinkedIn</div>
+            </div>
+          </div>
+          <div class="dd-sep"></div>
           <div class="dd-item" onclick="closeAll();window.location.href='mailto:omidrasipour@gmail.com'" data-i18n="hContact">Contact</div>
         </div>
       </div>
@@ -304,23 +319,115 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
     <div id="bootScreen" class="boot-screen">
       <div id="bootLines"></div>
       <div id="portfolioGrid">
-        <div class="p-tile" onclick="openUtility('utilTeletext')"><div class="p-gif"><img src="gifs/teletext.gif" alt=""></div><div class="p-label" data-i18n="gTeletext">TELETEXT</div></div>
-        <div class="p-tile" onclick="openUtility('utilAscii')"><div class="p-gif"><img src="gifs/ascii.gif" alt=""></div><div class="p-label" data-i18n="gAscii">ASCII GENERATOR</div></div>
-        <a href="https://x.com/woundheir__" target="_blank" class="p-tile"><div class="p-gif"><img src="gifs/x.gif" alt=""></div><div class="p-label" data-i18n="gX">X</div></a>
-        <a href="https://objkt.com/users/tz1ZsKoaQgjZegNKE7P9Rn9DyUtetFvdJQcm" target="_blank" class="p-tile"><div class="p-gif"><img src="gifs/objkt.gif" alt=""></div><div class="p-label" data-i18n="gObjkt">OBJKT</div></a>
-        <a href="https://katod-project.itch.io/" target="_blank" class="p-tile"><div class="p-gif"><img src="gifs/itch.gif" alt=""></div><div class="p-label" data-i18n="gItch">ITCH.IO</div></a>
-        <a href="https://teia.art/woundheir" target="_blank" class="p-tile"><div class="p-gif"><img src="gifs/teia.gif" alt=""></div><div class="p-label" data-i18n="gTeia">TEIA</div></a>
-        <a href="https://www.artstation.com/woundheir" target="_blank" class="p-tile"><div class="p-gif"><img src="gifs/artstation.gif" alt=""></div><div class="p-label" data-i18n="gArt">ARTSTATION</div></a>
-        <a href="https://soundcloud.com/woundheir" target="_blank" class="p-tile"><div class="p-gif"><img src="gifs/soundcloud.gif" alt=""></div><div class="p-label" data-i18n="gSound">SOUNDCLOUD</div></a>
+        <div class="p-tile" onclick="openUtility('utilTeletext')"><div class="p-gif"><img loading="lazy" src="gifs/teletext.webp" alt=""></div><div class="p-label" data-i18n="gTeletext">TELETEXT</div></div>
+        <div class="p-tile" onclick="openUtility('utilAscii')"><div class="p-gif"><img loading="lazy" src="gifs/ascii.webp" alt=""></div><div class="p-label" data-i18n="gAscii">ASCII GENERATOR</div></div>
+        <a href="https://x.com/woundheir__" target="_blank" class="p-tile"><div class="p-gif"><img loading="lazy" src="gifs/x.webp" alt=""></div><div class="p-label" data-i18n="gX">X</div></a>
+        <a href="https://objkt.com/users/tz1ZsKoaQgjZegNKE7P9Rn9DyUtetFvdJQcm" target="_blank" class="p-tile"><div class="p-gif"><img loading="lazy" src="gifs/objkt.webp" alt=""></div><div class="p-label" data-i18n="gObjkt">OBJKT</div></a>
+        <a href="https://katod-project.itch.io/" target="_blank" class="p-tile"><div class="p-gif"><img loading="lazy" src="gifs/itch.webp" alt=""></div><div class="p-label" data-i18n="gItch">ITCH.IO</div></a>
+        <a href="https://teia.art/woundheir" target="_blank" class="p-tile"><div class="p-gif"><img loading="lazy" src="gifs/teia.webp" alt=""></div><div class="p-label" data-i18n="gTeia">TEIA</div></a>
+        <a href="https://www.artstation.com/woundheir" target="_blank" class="p-tile"><div class="p-gif"><img loading="lazy" src="gifs/artstation.webp" alt=""></div><div class="p-label" data-i18n="gArt">ARTSTATION</div></a>
+        <a href="https://soundcloud.com/woundheir" target="_blank" class="p-tile"><div class="p-gif"><img loading="lazy" src="gifs/soundcloud.webp" alt=""></div><div class="p-label" data-i18n="gSound">SOUNDCLOUD</div></a>
       </div>
 
       <!-- ABOUT PAGE -->
-      <div id="aboutPage" class="about-page" onclick="event.stopPropagation()">
+
+
+
+    <!-- ══ TELETEXT CONVERTER ══ -->
+    <div class="utility-overlay" id="utilTeletext" onclick="event.stopPropagation()">
+      <div class="util-titlebar">
+        <span>&#9619; TELETEXT PHOTO CONVERTER &mdash; P739</span>
+        <span class="util-close-btn" onclick="closeUtility('utilTeletext')">&#10005; CLOSE</span>
+      </div>
+      <div class="util-toolbar">
+        <label data-i18n="uWidth-tt">WIDTH:</label>
+        <input type="number" id="ttWidth" min="24" value="40" oninput="ttSchedule()"
+          style="background:var(--bg);color:var(--green);border:1px solid var(--green);font-family:'Courier New',monospace;font-size:14px;padding:3px 8px;width:56px;outline:none;text-align:center;">
+        <span style="opacity:.3;margin:0 4px;">|</span>
+        <label data-i18n="uTheme">THEME:</label>
+        <div class="tt-dot-row" id="ttThemeRow"></div>
+        <span style="opacity:.3;margin:0 4px;">|</span>
+        <label data-i18n="uBg">BG:</label>
+        <div class="tt-dot-row" id="ttBgRow"></div>
+        <span style="opacity:.3;margin:0 4px;">|</span>
+        <label data-i18n="uTitle-tt">TITLE:</label>
+        <input id="ttTitleInput" maxlength="24" value="" placeholder="filename"
+          style="background:var(--bg);color:var(--green);border:1px solid var(--green);font-family:'Courier New',monospace;font-size:13px;padding:2px 6px;width:120px;outline:none;"
+          oninput="ttSchedule()">
+        <span class="util-spacer"></span>
+        <button class="util-btn util-btn-copy" id="ttCopyBtn" style="display:none" onclick="ttCopy()" data-i18n="ttCopyBtn">&#8711; COPY</button>
+        <button class="util-btn util-btn-dl" id="ttDlBtn" style="display:none" onclick="ttDownload()" data-i18n="ttDlBtn">&#8595; PNG</button>
+      </div>
+      <div class="util-dropzone tt-dropzone-initial" id="ttDropzone" onclick="document.getElementById('ttFileInput').click()">
+        <span data-i18n="uDrop-tt">&#9619;&#9618;&#9617; DROP IMAGE HERE OR CLICK TO UPLOAD &#9617;&#9618;&#9619;</span>
+      </div>
+      <div class="util-workspace" id="ttWorkspace" style="display:none;" onclick="document.getElementById('ttFileInput').click()">
+        <div class="tt-placeholder" id="ttPlaceholder">&#9619;&#9618;&#9617;<br><small>AWAITING INPUT</small></div>
+        <canvas id="ttOutCanvas"></canvas>
+      </div>
+      <div class="util-statusbar" id="ttStatus">&nbsp;</div>
+      <input type="file" id="ttFileInput" accept="image/*" style="display:none" onchange="ttHandleFile(this)">
+      <canvas id="ttSrcCanvas" style="display:none"></canvas>
+    </div>
+
+    <!-- ══ ASCII ART GENERATOR ══ -->
+    <div class="utility-overlay" id="utilAscii" onclick="event.stopPropagation()">
+      <div class="util-titlebar">
+        <span>&#9608; ASCII ART GENERATOR</span>
+        <span class="util-close-btn" onclick="closeUtility('utilAscii')">&#10005; CLOSE</span>
+      </div>
+      <div class="util-toolbar">
+        <label data-i18n="uWidth-ascii">WIDTH:</label>
+        <input type="number" id="asciiWidth" min="40" value="100" oninput="asciiSchedule()" style="background:var(--bg);color:var(--green);border:1px solid var(--green);font-family:'Courier New',monospace;font-size:14px;padding:3px 8px;width:70px;outline:none;text-align:center;">
+
+
+        <span style="opacity:.3;margin:0 4px;">|</span>
+        <label data-i18n="uCharset">CHARSET:</label>
+        <select id="asciiCharset" onchange="asciiSchedule()">
+          <option value="detailed">Detailed</option>
+          <option value="blocks">Blocks &#9619;&#9618;&#9617;</option>
+          <option value="minimal">Minimal</option>
+          <option value="numbers">Numbers</option>
+          <option value="binary">Binary 01</option>
+        </select>
+        <span style="opacity:.3;margin:0 4px;">|</span>
+        <label data-i18n="uInvert">INVERT:</label>
+        <input type="checkbox" id="asciiInvert" style="display:none;">
+        <div id="asciiInvertToggle" onclick="var cb=document.getElementById('asciiInvert');cb.checked=!cb.checked;this.textContent=cb.checked?'ON':'OFF';this.style.background=cb.checked?'var(--chrome-head-fg,var(--green))':'var(--chrome-head-bg,#000)';this.style.color=cb.checked?'var(--chrome-head-bg,#000)':'var(--chrome-head-fg,var(--green))';asciiSchedule();" style="font-family:'Courier New',monospace;font-size:13px;color:var(--chrome-head-fg,var(--green));background:var(--chrome-head-bg,#000);border:1px solid var(--chrome-head-fg,var(--green));padding:1px 8px;cursor:pointer;user-select:none;letter-spacing:2px;flex-shrink:0;">OFF</div>
+        <span style="opacity:.3;margin:0 4px;">|</span>
+        <label>TERMINAL:</label>
+        <span id="asciiThemeLabel" style="color:var(--chrome-head-fg,var(--green));background:var(--chrome-head-bg,#000);font-size:13px;letter-spacing:1px;padding:1px 6px;">ZX SPECTRUM</span>
+        <span style="opacity:.3;margin:0 4px;">|</span>
+        <label data-i18n="uTitle-ascii">TITLE:</label>
+        <input id="asciiTitleInput" maxlength="24" value="" placeholder="filename"
+          style="background:var(--bg);color:var(--green);border:1px solid var(--green);font-family:'Courier New',monospace;font-size:13px;padding:2px 6px;width:100px;outline:none;">
+        <span class="util-spacer"></span>
+        <button class="util-btn util-btn-copy" id="asciiCopyBtn" style="display:none" onclick="asciiCopy()" data-i18n="asciiCopyBtn">&#8711; COPY TXT</button>
+        <button class="util-btn util-btn-dl" id="asciiDlTxt" style="display:none" onclick="asciiDownloadTxt()" data-i18n="asciiDlTxt">&#8595; TXT</button>
+        <button class="util-btn util-btn-dl" id="asciiDlImg" style="display:none" onclick="asciiDownloadImg()" data-i18n="asciiDlImg">&#8595; PNG</button>
+      </div>
+      <div class="util-dropzone ascii-dropzone-initial" id="asciiDropzone" onclick="document.getElementById('asciiFileInput').click()">
+        <span data-i18n="uDrop-ascii">&#9619;&#9618;&#9617; DROP IMAGE HERE OR CLICK TO UPLOAD &#9617;&#9618;&#9619;</span>
+      </div>
+      <div class="util-workspace" id="asciiWorkspace" style="display:none;" onclick="document.getElementById('asciiFileInput').click()">
+        <div class="ascii-output-wrap">
+          <pre id="asciiOutput"></pre>
+        </div>
+      </div>
+      <div class="util-statusbar" id="asciiStatus">&nbsp;</div>
+      <input type="file" id="asciiFileInput" accept="image/*" style="display:none" onchange="asciiHandleFile(this)">
+      <canvas id="asciiSrcCanvas" style="display:none"></canvas>
+    </div>
+
+  </div><!-- end .content -->
+
+  <!-- OVERLAY PAGES -->
+<div id="aboutPage" class="about-page" onclick="event.stopPropagation()">
         <div class="about-shell">
           <div class="about-body">
             <div class="about-artist">
               <div class="about-portrait-wrap">
-<pre class="about-portrait" id="aboutPortrait">                   █▒▒░░░▒▒▒
+<pre class="about-portrait" id="aboutPortrait" style="font-size:5.5px;line-height:.95;letter-spacing:0;">                   █▒▒░░░▒▒▒
                  ▒▒▒░░░░░░░▒▒▒▒
                ▓▒▒▒░░░░░░░░░░▒▒▒▒
              █▓▒▒▒░░░░░░░░░░░░▒▒▒▓
@@ -372,8 +479,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
           <div class="about-close" onclick="closeAboutPage()" data-i18n="aboutClose">[ Close ]</div>
         </div>
       </div>
-
-      <!-- TELETEXT GUIDE PAGE -->
+      <!-- TELETEXT GUIDE<!-- TELETEXT GUIDE PAGE -->
       <div id="teletextGuidePage" class="help-guide-page" onclick="event.stopPropagation()">
         <div class="help-guide-shell">
           <div class="help-guide-title" data-i18n="hTeletextGuide">Teletext Guide</div>
@@ -396,94 +502,6 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
       </div>
     </div>
 
-
-    <!-- ══ TELETEXT CONVERTER ══ -->
-    <div class="utility-overlay" id="utilTeletext">
-      <div class="util-titlebar">
-        <span>&#9619; TELETEXT PHOTO CONVERTER &mdash; P739</span>
-        <span class="util-close-btn" onclick="closeUtility('utilTeletext')">&#10005; CLOSE</span>
-      </div>
-      <div class="util-toolbar">
-        <label data-i18n="uWidth-tt">WIDTH:</label>
-        <input type="number" id="ttWidth" min="24" value="40" oninput="ttSchedule()"
-          style="background:var(--bg);color:var(--green);border:1px solid var(--green);font-family:'Courier New',monospace;font-size:14px;padding:3px 8px;width:56px;outline:none;text-align:center;">
-        <span style="opacity:.3;margin:0 4px;">|</span>
-        <label data-i18n="uTheme">THEME:</label>
-        <div class="tt-dot-row" id="ttThemeRow"></div>
-        <span style="opacity:.3;margin:0 4px;">|</span>
-        <label data-i18n="uBg">BG:</label>
-        <div class="tt-dot-row" id="ttBgRow"></div>
-        <span style="opacity:.3;margin:0 4px;">|</span>
-        <label data-i18n="uTitle-tt">TITLE:</label>
-        <input id="ttTitleInput" maxlength="24" value="" placeholder="filename"
-          style="background:var(--bg);color:var(--green);border:1px solid var(--green);font-family:'Courier New',monospace;font-size:13px;padding:2px 6px;width:120px;outline:none;"
-          oninput="ttSchedule()">
-        <span class="util-spacer"></span>
-        <button class="util-btn util-btn-copy" id="ttCopyBtn" style="display:none" onclick="ttCopy()" data-i18n="ttCopyBtn">&#8711; COPY</button>
-        <button class="util-btn util-btn-dl" id="ttDlBtn" style="display:none" onclick="ttDownload()" data-i18n="ttDlBtn">&#8595; PNG</button>
-      </div>
-      <div class="util-dropzone tt-dropzone-initial" id="ttDropzone" onclick="document.getElementById('ttFileInput').click()">
-        <span data-i18n="uDrop-tt">&#9619;&#9618;&#9617; DROP IMAGE HERE OR CLICK TO UPLOAD &#9617;&#9618;&#9619;</span>
-      </div>
-      <div class="util-workspace" id="ttWorkspace" style="display:none;" onclick="document.getElementById('ttFileInput').click()">
-        <div class="tt-placeholder" id="ttPlaceholder">&#9619;&#9618;&#9617;<br><small>AWAITING INPUT</small></div>
-        <canvas id="ttOutCanvas"></canvas>
-      </div>
-      <div class="util-statusbar" id="ttStatus">&nbsp;</div>
-      <input type="file" id="ttFileInput" accept="image/*" style="display:none" onchange="ttHandleFile(this)">
-      <canvas id="ttSrcCanvas" style="display:none"></canvas>
-    </div>
-
-    <!-- ══ ASCII ART GENERATOR ══ -->
-    <div class="utility-overlay" id="utilAscii">
-      <div class="util-titlebar">
-        <span>&#9608; ASCII ART GENERATOR</span>
-        <span class="util-close-btn" onclick="closeUtility('utilAscii')">&#10005; CLOSE</span>
-      </div>
-      <div class="util-toolbar">
-        <label data-i18n="uWidth-ascii">WIDTH:</label>
-        <input type="number" id="asciiWidth" min="40" value="100" oninput="asciiSchedule()" style="background:var(--bg);color:var(--green);border:1px solid var(--green);font-family:'Courier New',monospace;font-size:14px;padding:3px 8px;width:70px;outline:none;text-align:center;">
-
-
-        <span style="opacity:.3;margin:0 4px;">|</span>
-        <label data-i18n="uCharset">CHARSET:</label>
-        <select id="asciiCharset" onchange="asciiSchedule()">
-          <option value="detailed">Detailed</option>
-          <option value="blocks">Blocks &#9619;&#9618;&#9617;</option>
-          <option value="minimal">Minimal</option>
-          <option value="numbers">Numbers</option>
-          <option value="binary">Binary 01</option>
-        </select>
-        <span style="opacity:.3;margin:0 4px;">|</span>
-        <label data-i18n="uInvert">INVERT:</label>
-        <input type="checkbox" id="asciiInvert" style="display:none;">
-        <div id="asciiInvertToggle" onclick="var cb=document.getElementById('asciiInvert');cb.checked=!cb.checked;this.textContent=cb.checked?'ON':'OFF';this.style.background=cb.checked?'var(--chrome-head-fg,var(--green))':'var(--chrome-head-bg,#000)';this.style.color=cb.checked?'var(--chrome-head-bg,#000)':'var(--chrome-head-fg,var(--green))';asciiSchedule();" style="font-family:'Courier New',monospace;font-size:13px;color:var(--chrome-head-fg,var(--green));background:var(--chrome-head-bg,#000);border:1px solid var(--chrome-head-fg,var(--green));padding:1px 8px;cursor:pointer;user-select:none;letter-spacing:2px;flex-shrink:0;">OFF</div>
-        <span style="opacity:.3;margin:0 4px;">|</span>
-        <label>TERMINAL:</label>
-        <span id="asciiThemeLabel" style="color:var(--chrome-head-fg,var(--green));background:var(--chrome-head-bg,#000);font-size:13px;letter-spacing:1px;padding:1px 6px;">ZX SPECTRUM</span>
-        <span style="opacity:.3;margin:0 4px;">|</span>
-        <label data-i18n="uTitle-ascii">TITLE:</label>
-        <input id="asciiTitleInput" maxlength="24" value="" placeholder="filename"
-          style="background:var(--bg);color:var(--green);border:1px solid var(--green);font-family:'Courier New',monospace;font-size:13px;padding:2px 6px;width:100px;outline:none;">
-        <span class="util-spacer"></span>
-        <button class="util-btn util-btn-copy" id="asciiCopyBtn" style="display:none" onclick="asciiCopy()" data-i18n="asciiCopyBtn">&#8711; COPY TXT</button>
-        <button class="util-btn util-btn-dl" id="asciiDlTxt" style="display:none" onclick="asciiDownloadTxt()" data-i18n="asciiDlTxt">&#8595; TXT</button>
-        <button class="util-btn util-btn-dl" id="asciiDlImg" style="display:none" onclick="asciiDownloadImg()" data-i18n="asciiDlImg">&#8595; PNG</button>
-      </div>
-      <div class="util-dropzone ascii-dropzone-initial" id="asciiDropzone" onclick="document.getElementById('asciiFileInput').click()">
-        <span data-i18n="uDrop-ascii">&#9619;&#9618;&#9617; DROP IMAGE HERE OR CLICK TO UPLOAD &#9617;&#9618;&#9619;</span>
-      </div>
-      <div class="util-workspace" id="asciiWorkspace" style="display:none;" onclick="document.getElementById('asciiFileInput').click()">
-        <div class="ascii-output-wrap">
-          <pre id="asciiOutput"></pre>
-        </div>
-      </div>
-      <div class="util-statusbar" id="asciiStatus">&nbsp;</div>
-      <input type="file" id="asciiFileInput" accept="image/*" style="display:none" onchange="asciiHandleFile(this)">
-      <canvas id="asciiSrcCanvas" style="display:none"></canvas>
-    </div>
-
-  </div><!-- end .content -->
 
   <!-- URL BAR -->
   <div class="url-bar" id="urlBar">
@@ -570,7 +588,7 @@ function highlightTheme(key) {
   document.querySelectorAll('.hl-color').forEach(el => {
     const k = el.dataset.theme;
     el.classList.toggle('hl', k===key);
-    el.textContent = (THEME_LABELS[k]||k);
+    el.textContent = (THEME_LABELS[k]||k) + (k===key?' \u2713':'');
   });
 }
 
@@ -618,22 +636,6 @@ function resetTerminalOptions() {
 
 // ── MENU & POPUP ─────────────────────────────────────────────────
 let activeMenu=null, activePopup=null, activeUtility=null;
-let helpTypingState=null;
-const ABOUT_TELETEXT_LINES = [
-  'The Teletex Generator encodes image data into visual signal blocks using brightness and color values from the source image.',
-  'The rendered output exists as a structured visual grid.',
-  'PNG export preserves the exact encoded signal and color information.',
-  'Terminal selection does not affect the generated image.',
-  'Visual effects applied in the interface do not affect the PNG export.'
-];
-const ABOUT_ASCII_LINES = [
-  'ASCII Guide',
-  'The ASCII Generator encodes image data into character symbols based on brightness density.',
-  'Output exists as selectable text and rendered image.',
-  'PNG export captures the active terminal state, including foreground and background colors defined by the selected terminal preset.',
-  'Visual effects applied in the interface do not affect the PNG export.',
-  'Terminal selection controls the final rendered color scheme.'
-];
 function toggleMenu(id,e) {
   e.stopPropagation(); closeAllPopups();
   const el=document.getElementById(id);
@@ -646,18 +648,25 @@ function closeAll() {
   Object.keys(subT).forEach(k => { clearTimeout(subT[k]); const el=document.getElementById(k); if(el) el.style.display='none'; });
   urlGo('woundheir.com');
 }
-function closeAllPopups() {
-  document.querySelectorAll('.popup').forEach(p=>p.classList.remove('open'));
-  ['aboutPage','teletextGuidePage','asciiGuidePage'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.classList.remove('open');
-  });
-  activePopup=null;
-}
+function closeAllPopups() { document.querySelectorAll('.popup').forEach(p=>p.classList.remove('open')); ['aboutPage','teletextGuidePage','asciiGuidePage'].forEach(id=>{const el=document.getElementById(id);if(el)el.classList.remove('open');}); activePopup=null; }
+
+const ABOUT_TELETEXT_LINES = [
+  'The Teletext Generator encodes image data into visual signal blocks using brightness and color values from the source image.',
+  'The rendered output exists as a structured visual grid.',
+  'PNG export preserves the exact encoded signal and color information.',
+  'Terminal selection does not affect the generated image.',
+  'Visual effects applied in the interface do not affect the PNG export.'
+];
+const ABOUT_ASCII_LINES = [
+  'The ASCII Generator encodes image data into character symbols based on brightness density.',
+  'Output exists as selectable text and rendered image.',
+  'PNG export captures the active terminal state, including foreground and background colors defined by the selected terminal preset.',
+  'Visual effects applied in the interface do not affect the PNG export.',
+  'Terminal selection controls the final rendered color scheme.'
+];
+let helpTypingState = null;
 function stopHelpTyping() {
-  if (helpTypingState && helpTypingState.finishCurrentWait) {
-    helpTypingState.finishCurrentWait();
-  }
+  if (helpTypingState && helpTypingState.finishCurrentWait) helpTypingState.finishCurrentWait();
   helpTypingState = null;
 }
 async function runHelpTyping(container, lines) {
@@ -679,10 +688,8 @@ async function runHelpTyping(container, lines) {
     const line = document.createElement('div');
     line.className = 'boot-line';
     const span = document.createElement('span');
-    span.className = 'c';
-    span.style.display = 'inline';
-    line.appendChild(span);
-    container.appendChild(line);
+    span.className = 'c'; span.style.display = 'inline';
+    line.appendChild(span); container.appendChild(line);
     const text = lines[li];
     for (let i=0; i<text.length; i++) {
       if (state.cancelled || helpTypingState !== state) return;
@@ -694,32 +701,16 @@ async function runHelpTyping(container, lines) {
     await wait(rnd(80,180));
   }
 }
-function openAboutPage(e) {
-  if(e) e.stopPropagation();
-  closeAll();
-  closeAllPopups();
-  stopHelpTyping();
-  document.getElementById('aboutPage').classList.add('open');
-  activePopup='aboutPage';
-}
-function closeAboutPage() {
-  stopHelpTyping();
-  document.getElementById('aboutPage').classList.remove('open');
-  activePopup=null;
-  urlGo('woundheir.com');
-}
 function openTeletextGuidePage(e) {
   if(e) e.stopPropagation();
-  closeAll();
-  closeAllPopups();
+  closeAll(); closeAllPopups();
   document.getElementById('teletextGuidePage').classList.add('open');
   activePopup='teletextGuidePage';
   runHelpTyping(document.getElementById('teletextGuideTyped'), ABOUT_TELETEXT_LINES);
 }
 function openAsciiGuidePage(e) {
   if(e) e.stopPropagation();
-  closeAll();
-  closeAllPopups();
+  closeAll(); closeAllPopups();
   document.getElementById('asciiGuidePage').classList.add('open');
   activePopup='asciiGuidePage';
   runHelpTyping(document.getElementById('asciiGuideTyped'), ABOUT_ASCII_LINES);
@@ -728,11 +719,14 @@ function closeGuidePage() {
   stopHelpTyping();
   const t = document.getElementById('teletextGuidePage');
   const a = document.getElementById('asciiGuidePage');
-  if (t) t.classList.remove('open');
-  if (a) a.classList.remove('open');
+  if(t) t.classList.remove('open');
+  if(a) a.classList.remove('open');
   activePopup = null;
   urlGo('woundheir.com');
 }
+
+function openAboutPage(e) { if(e) e.stopPropagation(); closeAll(); closeAllPopups(); document.getElementById('aboutPage').classList.add('open'); activePopup='aboutPage'; }
+function closeAboutPage() { document.getElementById('aboutPage').classList.remove('open'); activePopup=null; urlGo('woundheir.com'); }
 function openUtility(id) { if(activeUtility) closeUtility(activeUtility); document.getElementById(id).classList.add('open'); activeUtility=id; urlGo('woundheir.com/utilities/'+id.replace('util','').toLowerCase()); }
 function closeUtility(id) { document.getElementById(id).classList.remove('open'); activeUtility=null; urlGo('woundheir.com'); }
 function urlGo(url) { const el=document.getElementById('urlText'); if(el) el.textContent='http://'+url; }
@@ -754,7 +748,7 @@ const LANGS = {
     // Setup menu
     sLanguage:'Language', sReset:'Reset terminal to defaults',
     // Help menu
-    hAbout:'About', hTeletextGuide:'Teletext Guide', hAsciiGuide:'ASCII Guide', hContact:'Contact',
+    hAbout:'About', hTeletextGuide:'Teletext Guide', hAsciiGuide:'ASCII Guide', hLinks:'Links', hContact:'Contact',
     // About page
     aboutLine1:'woundheir — digital artist &amp; creative developer.',
     aboutLine2:'Visuals — 2D games — music — experiments on the web and on-chain.',
@@ -780,7 +774,7 @@ const LANGS = {
     tFont:'── Font ──', tEffects:'── Effects ──',
     tFontCourier:'Courier New (default)',
     tScanlines:'Scanlines', tFlicker:'CRT Flicker', tGlitch:'Glitch',
-    tRgb:'RGB split', tBleed:'Pixel bleed', tNegative:'Negative', tPhosphor:'Phosphor burn', tVhs:'VHS tracking', tInterlace:'Interlace', tBarrel:'Barrel distort', tNoise:'Noise', tClose:'[ Close ]',
+    tRgb:'RGB split', tBleed:'Pixel bleed', tPhosphor:'Phosphor burn', tVhs:'VHS tracking', tInterlace:'Interlace', tBarrel:'Barrel distort', tNoise:'Noise', tClose:'[ Close ]',
     // Themes sections
     thMono:'── Monochrome ──', thColor:'── Color schemes ──',
     // Version
@@ -794,7 +788,7 @@ const LANGS = {
     vDefault:'Vista predefinita', vFullscreen:'Schermo intero', vSource:'Sorgente',
     uTeletext:'▓ Convertitore Teletext', uAscii:'█ Generatore ASCII',
     sLanguage:'Lingua', sReset:'Ripristina impostazioni',
-    hAbout:'Informazioni', hTeletextGuide:'Guida Teletext', hAsciiGuide:'Guida ASCII', hContact:'Contatto',
+    hAbout:'Informazioni', hTeletextGuide:'Guida Teletext', hAsciiGuide:'Guida ASCII', hLinks:'Link', hContact:'Contatto',
     aboutLine1:'woundheir — artista digitale &amp; sviluppatore creativo.',
     aboutLine2:'Visual — giochi 2D — musica — esperimenti sul web e on-chain.',
     aboutLine3:'Basato su un tubo a raggi catodici.',
@@ -815,7 +809,7 @@ const LANGS = {
     tFont:'── Font ──', tEffects:'── Effetti ──',
     tFontCourier:'Courier New (predefinito)',
     tScanlines:'Scanline', tFlicker:'Sfarfallio CRT', tGlitch:'Glitch',
-    tRgb:'Divisione RGB', tBleed:'Dissolvenza pixel', tNegative:'Negativo', tPhosphor:'Bruciatura fosforo', tVhs:'Tracciamento VHS', tInterlace:'Interlacciato', tBarrel:'Distorsione barile', tNoise:'Rumore', tClose:'[ Chiudi ]',
+    tRgb:'Divisione RGB', tBleed:'Dissolvenza pixel', tPhosphor:'Bruciatura fosforo', tVhs:'Tracciamento VHS', tInterlace:'Interlacciato', tBarrel:'Distorsione barile', tNoise:'Rumore', tClose:'[ Chiudi ]',
     thMono:'── Monocromo ──', thColor:'── Combinazioni colore ──',
     ver:'v1.5',
   },
@@ -827,7 +821,7 @@ const LANGS = {
     vDefault:'Vue par défaut', vFullscreen:'Plein écran', vSource:'Source',
     uTeletext:'▓ Convertisseur Teletext', uAscii:'█ Générateur ASCII',
     sLanguage:'Langue', sReset:'Réinitialiser le terminal',
-    hAbout:'À propos', hTeletextGuide:'Guide Teletext', hAsciiGuide:'Guide ASCII', hContact:'Contact',
+    hAbout:'À propos', hTeletextGuide:'Guide Teletext', hAsciiGuide:'Guide ASCII', hLinks:'Liens', hContact:'Contact',
     aboutLine1:'woundheir — artiste numérique &amp; développeur créatif.',
     aboutLine2:'Visuels — jeux 2D — musique — expériences sur le web et on-chain.',
     aboutLine3:'Basé sur un tube cathodique.',
@@ -848,7 +842,7 @@ const LANGS = {
     tFont:'── Police ──', tEffects:'── Effets ──',
     tFontCourier:'Courier New (défaut)',
     tScanlines:'Lignes de balayage', tFlicker:'Scintillement CRT', tGlitch:'Glitch',
-    tRgb:'Séparation RGB', tBleed:'Diffusion pixel', tNegative:'Négatif', tPhosphor:'Brûlure phosphore', tVhs:'Tracking VHS', tInterlace:'Entrelacé', tBarrel:'Distorsion barillet', tNoise:'Bruit', tClose:'[ Fermer ]',
+    tRgb:'Séparation RGB', tBleed:'Diffusion pixel', tPhosphor:'Brûlure phosphore', tVhs:'Tracking VHS', tInterlace:'Entrelacé', tBarrel:'Distorsion barillet', tNoise:'Bruit', tClose:'[ Fermer ]',
     thMono:'── Monochrome ──', thColor:'── Palettes de couleurs ──',
     ver:'v1.5',
   },
@@ -860,7 +854,7 @@ const LANGS = {
     vDefault:'デフォルトビュー', vFullscreen:'全画面', vSource:'ソース',
     uTeletext:'▓ テレテキスト変換', uAscii:'█ アスキーアートジェネレーター',
     sLanguage:'言語', sReset:'ターミナルをリセット',
-    hAbout:'概要', hTeletextGuide:'テレテキストガイド', hAsciiGuide:'ASCIIガイド', hContact:'コンタクト',
+    hAbout:'概要', hTeletextGuide:'テレテキストガイド', hAsciiGuide:'ASCIIガイド', hLinks:'リンク', hContact:'コンタクト',
     aboutLine1:'woundheir — デジタルアーティスト &amp; クリエイティブ開発者。',
     aboutLine2:'ビジュアル — 2Dゲーム — 音楽 — ウェブとオンチェーンの実験。',
     aboutLine3:'ブラウン管をベースに。',
@@ -881,7 +875,7 @@ const LANGS = {
     tFont:'── フォント ──', tEffects:'── エフェクト ──',
     tFontCourier:'Courier New（デフォルト）',
     tScanlines:'スキャンライン', tFlicker:'CRTフリッカー', tGlitch:'グリッチ',
-    tRgb:'RGB分割', tBleed:'ピクセルブリード', tNegative:'ネガ', tPhosphor:'燐光バーン', tVhs:'VHSトラッキング', tInterlace:'インターレース', tBarrel:'樽型歪み', tNoise:'ノイズ', tClose:'[ 閉じる ]',
+    tRgb:'RGB分割', tBleed:'ピクセルブリード', tPhosphor:'燐光バーン', tVhs:'VHSトラッキング', tInterlace:'インターレース', tBarrel:'樽型歪み', tNoise:'ノイズ', tClose:'[ 閉じる ]',
     thMono:'── モノクロ ──', thColor:'── カラースキーム ──',
     ver:'v1.5',
   }
@@ -917,7 +911,7 @@ function setLang(lang, e) {
   ti('vDefault', t.vDefault); ti('vFullscreen', t.vFullscreen); ti('vSource', t.vSource);
   ti('uTeletext', t.uTeletext); ti('uAscii', t.uAscii);
   ti('sLanguage', t.sLanguage); ti('sReset', t.sReset);
-  ti('hAbout', t.hAbout); ti('hTeletextGuide', t.hTeletextGuide); ti('hAsciiGuide', t.hAsciiGuide); ti('hContact', t.hContact);
+  ti('hAbout', t.hAbout); ti('hTeletextGuide', t.hTeletextGuide||'Teletext Guide'); ti('hAsciiGuide', t.hAsciiGuide||'ASCII Guide'); ti('hContact', t.hContact);
   ti('aboutLine1', t.aboutLine1); ti('aboutLine2', t.aboutLine2); ti('aboutLine3', t.aboutLine3);
   ti('aboutClose', t.aboutClose);
   ti('uDrop-tt', t.uDrop); ti('uDrop-ascii', t.uDrop);
@@ -1031,10 +1025,7 @@ setInterval(()=>{const s=Math.floor((Date.now()-sessionStart)/1000),el=document.
   const term=document.getElementById('terminal');
   const extras=[...['flicker','glitch','rgb','bleed']].sort(()=>Math.random()-.5).slice(0,1+Math.floor(Math.random()*2));
   fx.scan=true; term.classList.add('scanlines-on');
-  // VHS tracking — random on/off each load
-  const vhsOn = Math.random() > 0.5;
-  fx.vhs = vhsOn; if(vhsOn) term.classList.add('vhs-on');
-  const optVhs = document.getElementById('opt-vhs'); if(optVhs) setFxLabel(optVhs, vhsOn);
+  // VHS tracking — always OFF by default
   extras.forEach(name=>{fx[name]=true;var cls=effectClass[name]||(name+'-on');term.classList.add(cls);var opt=document.getElementById('opt-'+name);if(opt)setFxLabel(opt,true);});
 })();
 
@@ -1043,21 +1034,14 @@ document.addEventListener('keydown',e=>{
   if(e.key==='Escape'){
     if(activeUtility){closeUtility(activeUtility);return;}
     if(activePopup==='aboutPage'){closeAboutPage();return;}
-    if(activePopup==='teletextGuidePage' || activePopup==='asciiGuidePage'){closeGuidePage();return;}
+    if(activePopup){closePopup(activePopup);return;}
     closeAll();closeAllPopups();
   }
   if(e.ctrlKey&&e.key==='r'){e.preventDefault();location.reload();}
   if(e.key==='F11'){e.preventDefault();toggleFullscreen();}
 });
 document.querySelectorAll('.popup').forEach(p=>p.addEventListener('click',e=>e.stopPropagation()));
-document.addEventListener('click',e=>{ if(activePopup==='aboutPage') return; closeAll();closeAllPopups(); });
-document.getElementById('aboutPage').addEventListener('click',function(e){
-  if(!helpTypingState) return;
-  const closeBtn = e.target.closest('.about-close');
-  if(closeBtn) return;
-  helpTypingState.skipLine = true;
-  if(helpTypingState.finishCurrentWait) helpTypingState.finishCurrentWait();
-});
+document.addEventListener('click',e=>{ setTimeout(()=>{ if(activePopup) return; if(activeMenu) return; closeAll();closeAllPopups(); },0); });
 ['teletextGuidePage','asciiGuidePage'].forEach(id => {
   const page = document.getElementById(id);
   if (!page) return;
