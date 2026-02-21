@@ -157,19 +157,7 @@ body { background:#000; display:flex; align-items:center; justify-content:center
 
 
 
-/* CUSTOM CURSOR */
-body { cursor: none !important; }
-* { cursor: none !important; }
-#customCursor {
-  position: fixed;
-  top: 0; left: 0;
-  width: 20px; height: 20px;
-  pointer-events: none;
-  z-index: 99999;
-  transform: translate(-2px, -2px);
-  transition: opacity 0.15s;
-  filter: drop-shadow(0 0 3px var(--green));
-}
+/* cursor: default */
 
 /* Placeholder color */
 input::placeholder { color:var(--green); opacity:.5; }
@@ -185,9 +173,6 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
 </style>
 </head>
 <body>
-<svg id="customCursor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-  <polygon id="cursorShape" points="2,2 2,16 6,12 9,18 11,17 8,11 14,11" fill="var(--green)" stroke="none"/>
-</svg>
 <div class="terminal scanlines-on" id="terminal">
 
   <!-- MENU BAR -->
@@ -358,10 +343,10 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
         <button class="util-btn util-btn-copy" id="ttCopyBtn" style="display:none" onclick="ttCopy()" data-i18n="ttCopyBtn">&#8711; COPY</button>
         <button class="util-btn util-btn-dl" id="ttDlBtn" style="display:none" onclick="ttDownload()" data-i18n="ttDlBtn">&#8595; PNG</button>
       </div>
-      <div class="util-dropzone tt-dropzone-initial" id="ttDropzone" onclick="document.getElementById('ttFileInput').click()">
+      <div class="util-dropzone tt-dropzone-initial" id="ttDropzone" onclick="if(activeMenu){closeAll();}else{document.getElementById('ttFileInput').click();}">
         <span data-i18n="uDrop-tt">&#9619;&#9618;&#9617; DROP IMAGE HERE OR CLICK TO UPLOAD &#9617;&#9618;&#9619;</span>
       </div>
-      <div class="util-workspace" id="ttWorkspace" style="display:none;" onclick="document.getElementById('ttFileInput').click()">
+      <div class="util-workspace" id="ttWorkspace" style="display:none;" onclick="if(activeMenu){closeAll();}else{document.getElementById('ttFileInput').click();}">
         <div class="tt-placeholder" id="ttPlaceholder">&#9619;&#9618;&#9617;<br><small>AWAITING INPUT</small></div>
         <canvas id="ttOutCanvas"></canvas>
       </div>
@@ -406,10 +391,10 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
         <button class="util-btn util-btn-dl" id="asciiDlTxt" style="display:none" onclick="asciiDownloadTxt()" data-i18n="asciiDlTxt">&#8595; TXT</button>
         <button class="util-btn util-btn-dl" id="asciiDlImg" style="display:none" onclick="asciiDownloadImg()" data-i18n="asciiDlImg">&#8595; PNG</button>
       </div>
-      <div class="util-dropzone ascii-dropzone-initial" id="asciiDropzone" onclick="document.getElementById('asciiFileInput').click()">
+      <div class="util-dropzone ascii-dropzone-initial" id="asciiDropzone" onclick="if(activeMenu){closeAll();}else{document.getElementById('asciiFileInput').click();}">
         <span data-i18n="uDrop-ascii">&#9619;&#9618;&#9617; DROP IMAGE HERE OR CLICK TO UPLOAD &#9617;&#9618;&#9619;</span>
       </div>
-      <div class="util-workspace" id="asciiWorkspace" style="display:none;" onclick="document.getElementById('asciiFileInput').click()">
+      <div class="util-workspace" id="asciiWorkspace" style="display:none;" onclick="if(activeMenu){closeAll();}else{document.getElementById('asciiFileInput').click();}">
         <div class="ascii-output-wrap">
           <pre id="asciiOutput"></pre>
         </div>
@@ -727,7 +712,7 @@ function closeGuidePage() {
 
 function openAboutPage(e) { if(e) e.stopPropagation(); closeAll(); closeAllPopups(); document.getElementById('aboutPage').classList.add('open'); activePopup='aboutPage'; }
 function closeAboutPage() { document.getElementById('aboutPage').classList.remove('open'); activePopup=null; urlGo('woundheir.com'); }
-function openUtility(id) { if(activeUtility) closeUtility(activeUtility); document.getElementById(id).classList.add('open'); activeUtility=id; urlGo('woundheir.com/utilities/'+id.replace('util','').toLowerCase()); }
+function openUtility(id) { closeAll(); if(activeUtility) closeUtility(activeUtility); document.getElementById(id).classList.add('open'); activeUtility=id; urlGo('woundheir.com/utilities/'+id.replace('util','').toLowerCase()); }
 function closeUtility(id) { document.getElementById(id).classList.remove('open'); activeUtility=null; urlGo('woundheir.com'); }
 function urlGo(url) { const el=document.getElementById('urlText'); if(el) el.textContent='http://'+url; }
 function toggleFullscreen() { if(!document.fullscreenElement) document.documentElement.requestFullscreen(); else document.exitFullscreen(); closeAll(); }
@@ -1405,17 +1390,6 @@ function asciiDownloadImg() {
   a.click();
 }
 
-// ── CUSTOM CURSOR ─────────────────────────────────────────────────
-(function(){
-  const cur = document.getElementById('customCursor');
-  if (!cur) return;
-  document.addEventListener('mousemove', e => {
-    cur.style.left = e.clientX + 'px';
-    cur.style.top  = e.clientY + 'px';
-  });
-  document.addEventListener('mouseleave', () => { cur.style.opacity = '0'; });
-  document.addEventListener('mouseenter', () => { cur.style.opacity = '1'; });
-})();
 
 </script>
 </body>
