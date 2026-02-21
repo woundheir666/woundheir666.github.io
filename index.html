@@ -4,6 +4,15 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>WOUNDHEIR</title>
+<!-- ═══ GOOGLE ANALYTICS ═══ -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-M9WV98MLPH"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-M9WV98MLPH');
+</script>
+<!-- ═══ END GOOGLE ANALYTICS ═══ -->
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
 :root {
@@ -15,8 +24,8 @@ body { background:#000; display:flex; align-items:center; justify-content:center
 .terminal { width:96vw; max-width:1200px; min-height:92vh; background:var(--bg); color:var(--green); font-size:23px; line-height:1.35; text-shadow:0 0 3px var(--green); display:flex; flex-direction:column; position:relative; overflow:hidden; }
 .terminal.scanlines-on .content::before { content:""; position:absolute; inset:0; pointer-events:none; background-image:repeating-linear-gradient(to bottom,rgba(0,0,0,.35) 0px,rgba(0,0,0,.35) 1px,rgba(0,0,0,0) 1.5px,rgba(0,0,0,0) 3px); mix-blend-mode:multiply; z-index:2; }
 .terminal.scanlines-on .url-bar::before,.terminal.scanlines-on .ticker-bar::before { content:""; position:absolute; inset:0; pointer-events:none; background-image:repeating-linear-gradient(to bottom,rgba(0,0,0,.35) 0px,rgba(0,0,0,.35) 1px,rgba(0,0,0,0) 1.5px,rgba(0,0,0,0) 3px); mix-blend-mode:multiply; z-index:1; }
-.terminal.flicker-on::after { content:""; position:absolute; inset:0; pointer-events:none; z-index:999; animation:crt-flicker .12s infinite; }
-@keyframes crt-flicker { 0%{opacity:.97;background:rgba(0,0,0,.02)} 50%{opacity:1;background:transparent} 100%{opacity:.96;background:rgba(0,0,0,.015)} }
+.terminal.flicker-on::after { content:""; position:absolute; inset:0; pointer-events:none; z-index:9999; animation:crt-flicker .1s infinite; }
+@keyframes crt-flicker { 0%{opacity:1;background:rgba(0,0,0,0)} 15%{opacity:1;background:rgba(0,0,0,.18)} 30%{opacity:1;background:rgba(0,0,0,0)} 50%{opacity:.7;background:rgba(0,0,0,.22)} 65%{opacity:1;background:rgba(0,0,0,0)} 80%{opacity:.75;background:rgba(0,0,0,.15)} 100%{opacity:1;background:rgba(0,0,0,0)} }
 .terminal.glitch-on { animation:glitch 6s infinite; }
 @keyframes glitch { 0%,96%,100%{transform:none;clip-path:none} 96.5%{transform:translateX(-3px);clip-path:inset(15% 0 70% 0)} 97%{transform:translateX(4px);clip-path:inset(55% 0 20% 0)} 97.5%{transform:translateX(-2px);clip-path:inset(80% 0 5% 0)} 98%{transform:translateX(2px);clip-path:none} }
 .terminal.rgb-on .content,.terminal.rgb-on .boot-screen,.terminal.rgb-on .menu-bar,.terminal.rgb-on .ticker-bar,.terminal.rgb-on .url-bar { text-shadow:-2px 0 rgba(255,0,0,.5),2px 0 rgba(0,255,255,.5),0 0 3px var(--green); }
@@ -268,23 +277,13 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
           <div class="dd-item" onclick="openTeletextGuidePage(event)" data-i18n="hTeletextGuide">Teletext Guide</div>
           <div class="dd-item" onclick="openAsciiGuidePage(event)" data-i18n="hAsciiGuide">ASCII Guide</div>
           <div class="dd-sep"></div>
-          <div class="dd-item has-sub" onmouseenter="showSub('linksSub')" onmouseleave="hideSub('linksSub')">
-            <span data-i18n="hLinks">Links</span><span>&#8250;</span>
-            <div class="submenu" id="linksSub" onmouseenter="showSub('linksSub')" onmouseleave="hideSub('linksSub')">
-              <div class="sub-item" onclick="closeAll();window.open('https://x.com/woundheir__','_blank')">X</div>
-              <div class="sub-item" onclick="closeAll();window.open('https://objkt.com/users/tz1ZsKoaQgjZegNKE7P9Rn9DyUtetFvdJQcm','_blank')">Objkt</div>
-              <div class="sub-item" onclick="closeAll();window.open('https://katod-project.itch.io/','_blank')">Itch.io</div>
-              <div class="sub-item" onclick="closeAll();window.open('https://teia.art/woundheir','_blank')">Teia</div>
-              <div class="sub-item" onclick="closeAll();window.open('https://www.artstation.com/woundheir','_blank')">Artstation</div>
-              <div class="sub-item" onclick="closeAll();window.open('https://soundcloud.com/woundheir','_blank')">Soundcloud</div>
-              <div class="sub-item" onclick="closeAll();window.open('https://linkedin.com/in/omidrasipour/','_blank')">LinkedIn</div>
-            </div>
-          </div>
-          <div class="dd-sep"></div>
-          <div class="dd-item" onclick="closeAll();window.location.href='mailto:omidrasipour@gmail.com'" data-i18n="hContact">Contact</div>
+          <div class="dd-item" onclick="closeAll();window.location.href='mailto:omidrasipour@gmail.com'" data-i18n="hContact">Contact (email)</div>
         </div>
       </div>
 
+    </div>
+    <div class="menu-item" id="mDonate" style="margin-left:auto;padding:0 10px;" onclick="closeAll();window.open('https://www.paypal.com/donate/?hosted_button_id=AK3ELELPW4CXJ','_blank')">
+      <span style="letter-spacing:1px;"><u>D</u>onate</span>
     </div>
     <div style="font-size:13px;opacity:.5;padding:0 10px;flex-shrink:0;letter-spacing:1px;" data-i18n="ver">v1.5</div>
   </div>
@@ -573,7 +572,7 @@ function highlightTheme(key) {
   document.querySelectorAll('.hl-color').forEach(el => {
     const k = el.dataset.theme;
     el.classList.toggle('hl', k===key);
-    el.textContent = (THEME_LABELS[k]||k) + (k===key?' \u2713':'');
+    el.textContent = (THEME_LABELS[k]||k);
   });
 }
 
